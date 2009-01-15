@@ -1327,6 +1327,10 @@ source "drivers/uio/Kconfig"
 
 source "drivers/staging/Kconfig"
 
+if ARCH_OMAP
+source "drivers/dsp/dspgateway/Kconfig"
+endif
+
 endmenu
 
 source "fs/Kconfig"
