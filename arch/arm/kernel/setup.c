@@ -825,8 +825,10 @@ void __init setup_arch(char **cmdline_p)
 	paging_init(mdesc);
 	request_standard_resources(&meminfo, mdesc);
 
+#ifdef CONFIG_SMP
 	if (is_smp())
 		smp_init_cpus();
+#endif
 	reserve_crashkernel();
 
 	cpu_init();

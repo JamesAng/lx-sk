@@ -244,7 +244,7 @@ SECTIONS
 	DISCARDS
 
 #ifndef CONFIG_SMP_ON_UP
-	/DISCARD/ {
+	/DISCARD/ : {
 		*(.smpalt.init)
 	}
 #endif
