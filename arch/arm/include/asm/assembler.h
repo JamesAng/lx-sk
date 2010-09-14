@@ -154,16 +154,39 @@
 	.long	9999b,9001f;			\
 	.popsection
 
+#ifdef CONFIG_SMP
+#define SMP(instr...)						\
+9998:	instr
+#define UP(instr...)						\
+	.pushsection ".smpalt.init", "a"			;\
+	.long	9998b						;\
+	instr							;\
+	.popsection
+#define UP_B(label)						\
+	.equ	up_b_offset, label - 9998b			;\
+	.pushsection ".smpalt.init", "a"			;\
+	.long	9998b						;\
+	b	. + up_b_offset					;\
+	.popsection
+#else
+#define SMP(instr...)
+#define UP(instr...) instr
+#define UP_B(label) b label
+#endif
+
 /*
  * SMP data memory barrier
  */
 	.macro	smp_dmb
 #ifdef CONFIG_SMP
 #if __LINUX_ARM_ARCH__ >= 7
-	dmb
+	SMP(dmb)
 #elif __LINUX_ARM_ARCH__ == 6
-	mcr	p15, 0, r0, c7, c10, 5	@ dmb
+	SMP(mcr	p15, 0, r0, c7, c10, 5)	@ dmb
+#else
+#error Incompatible SMP platform
 #endif
+	UP(nop)
 #endif
 	.endm
 

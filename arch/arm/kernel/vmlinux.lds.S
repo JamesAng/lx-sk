@@ -40,6 +40,11 @@ SECTIONS
 		__tagtable_begin = .;
 			*(.taglist.init)
 		__tagtable_end = .;
+#ifdef CONFIG_SMP_ON_UP
+		__smpalt_begin = .;
+			*(.smpalt.init)
+		__smpalt_end = .;
+#endif
 
 		INIT_SETUP(16)
 
@@ -237,6 +242,12 @@ SECTIONS
 
 	/* Default discards */
 	DISCARDS
+
+#ifndef CONFIG_SMP_ON_UP
+	/DISCARD/ {
+		*(.smpalt.init)
+	}
+#endif
 }
 
 /*

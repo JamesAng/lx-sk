@@ -36,6 +36,7 @@
 #include <asm/procinfo.h>
 #include <asm/sections.h>
 #include <asm/setup.h>
+#include <asm/smp_plat.h>
 #include <asm/mach-types.h>
 #include <asm/cacheflush.h>
 #include <asm/cachetype.h>
@@ -824,9 +825,8 @@ void __init setup_arch(char **cmdline_p)
 	paging_init(mdesc);
 	request_standard_resources(&meminfo, mdesc);
 
-#ifdef CONFIG_SMP
-	smp_init_cpus();
-#endif
+	if (is_smp())
+		smp_init_cpus();
 	reserve_crashkernel();
 
 	cpu_init();
