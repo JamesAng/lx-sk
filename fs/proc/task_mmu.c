@@ -363,13 +363,13 @@ static int smaps_pte_range(pmd_t *pmd, unsigned long addr, unsigned long end,
 			mss->referenced += PAGE_SIZE;
 		mapcount = page_mapcount(page);
 		if (mapcount >= 2) {
-			if (pte_dirty(ptent))
+			if (pte_dirty(ptent) || PageDirty(page))
 				mss->shared_dirty += PAGE_SIZE;
 			else
 				mss->shared_clean += PAGE_SIZE;
 			mss->pss += (PAGE_SIZE << PSS_SHIFT) / mapcount;
 		} else {
-			if (pte_dirty(ptent))
+			if (pte_dirty(ptent) || PageDirty(page))
 				mss->private_dirty += PAGE_SIZE;
 			else
 				mss->private_clean += PAGE_SIZE;
@@ -539,6 +539,7 @@ static ssize_t clear_refs_write(struct file *file, const char __user *buf,
 
 const struct file_operations proc_clear_refs_operations = {
 	.write		= clear_refs_write,
+	.llseek		= noop_llseek,
 };
 
 struct pagemapread {
