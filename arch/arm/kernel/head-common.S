@@ -63,6 +63,9 @@ ENDPROC(__vet_atags)
  *  r1  = machine ID
  *  r2  = atags pointer
  *  r9  = processor ID
+ *
+ * Note that if the machine uses BSS to store the debug UART configuration,
+ * debug_ll code will not work after clear BSS until inituart is called again.
  */
 	__INIT
 __mmap_switched:
@@ -79,6 +82,10 @@ __mmap_switched:
 1:	cmp	r6, r7
 	strcc	fp, [r6],#4
 	bcc	1b
+
+#if defined(CONFIG_DEBUG_LL) && !defined(CONFIG_DEBUG_ICEDCC)
+	inituart r1, r4, r5
+#endif
 
  ARM(	ldmia	r3, {r4, r5, r6, r7, sp})
  THUMB(	ldmia	r3, {r4, r5, r6, r7}	)
