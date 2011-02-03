@@ -27,7 +27,15 @@
 		.macro	inituart, id, a, v
 		mrc	p15, 0, \a, c1, c0
 		tst	\a, #1			@ MMU enabled?
+#ifdef CONFIG_AUTO_ZRELADDR
+		ldreq	\a, =omap_uart_phys
+		biceq	\a, \a, #0xf8000000	@ clear top bits of virt addr
+		moveq	\v, pc			@ copy pc
+		andeq	\v, \v, #0xf8000000	@ clear lower bits
+		orreq	\a, \v			@ combile to get phys addr
+#else
 		ldreq	\a, =omap_uart_v2p(omap_uart_phys)
+#endif
 		ldrne	\a, =omap_uart_phys
 		mov	\v, #(UART_LSR << OMAP_PORT_SHIFT)
 		str	\v, [\a, #8]		@ save lsr, different for 7xx
@@ -101,7 +109,15 @@
 		/* Use omap_uart_phys/virt if already configured */
 		mrc	p15, 0, \rp, c1, c0
 		tst	\rp, #1			@ MMU enabled?
+#ifdef CONFIG_AUTO_ZRELADDR
+		ldreq	\rp, =omap_uart_phys	@ MMU disabled
+		biceq	\rp, \rp, #0xf8000000	@ clear top bits of virt addr
+		moveq	\rv, pc			@ copy pc
+		andeq	\rv, \rv, #0xf8000000	@ clear lower bits
+		orreq	\rp, \rv		@ combine to get phys addr
+#else
 		ldreq	\rp, =omap_uart_v2p(omap_uart_phys)	@ MMU disabled
+#endif
 		ldrne	\rp, =omap_uart_phys	@ MMU enabled
 		add	\rv, \rp, #4		@ omap_uart_virt
 		ldr	\rp, [\rp, #0]
@@ -113,15 +129,23 @@
 		.endm
 
 		.macro	busyuart,rd,rx
-1001:		ldrb	\rd, [\rx, #(UART_LSR << OMAP_PORT_SHIFT)]
-		and	\rd, \rd, #(UART_LSR_TEMT | UART_LSR_THRE)
-		teq	\rd, #(UART_LSR_TEMT | UART_LSR_THRE)
-		beq	1002f
-		ldrb	\rd, [\rx, #(UART_LSR << OMAP7XX_PORT_SHIFT)]
+1001:		mrc	p15, 0, \rd, c1, c0
+		tst	\rd, #1			@ MMU enabled?
+#ifdef CONFIG_AUTO_ZRELADDR
+		ldreq	\rd, =omap_uart_lsr	@ MMU disabled
+		biceq	\rd, \rd, #0xf8000000	@ clear top bits of virt addr
+		roreq	\rd, \rd, #27		@ rotate bits
+		orreq	\rd, pc, lsr #27	@ orr with top bits of pc
+		roreq	\rd, \rd, #5		@ rotate bits back
+#else
+		ldreq	\rd, =omap_uart_v2p(omap_uart_lsr)	@ MMU disabled
+#endif
+		ldrne	\rd, =omap_uart_lsr	@ MMU enabled
+		ldr	\rd, [\rd, #0]
+		ldrb	\rd, [\rx, \rd]
 		and	\rd, \rd, #(UART_LSR_TEMT | UART_LSR_THRE)
 		teq	\rd, #(UART_LSR_TEMT | UART_LSR_THRE)
 		bne	1001b
-1002:
 		.endm
 
 		.macro	waituart,rd,rx
