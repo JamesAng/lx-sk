@@ -18,7 +18,6 @@
 #include <plat/serial.h>
 
 #define omap_uart_v2p(x)	((x) - PAGE_OFFSET + PLAT_PHYS_OFFSET)
-#define omap_uart_p2v(x)	((x) - PLAT_PHYS_OFFSET + PAGE_OFFSET)
 
 		.pushsection .data
 omap_uart_phys:	.word	0x0
@@ -37,57 +36,13 @@ omap_uart_virt:	.word	0x0
 		.macro	addruart, rp, rv
 
 		/* Use omap_uart_phys/virt if already configured */
-9:		mrc	p15, 0, \rp, c1, c0
+		mrc	p15, 0, \rp, c1, c0
 		tst	\rp, #1			@ MMU enabled?
 		ldreq	\rp, =omap_uart_v2p(omap_uart_phys)	@ MMU disabled
 		ldrne	\rp, =omap_uart_phys	@ MMU enabled
 		add	\rv, \rp, #4		@ omap_uart_virt
 		ldr	\rp, [\rp, #0]
 		ldr	\rv, [\rv, #0]
-		cmp	\rp, #0			@ is port configured?
-		cmpne	\rv, #0
-		bne	99f			@ already configured
-
-		/* Check the debug UART configuration set in uncompress.h */
-		mrc	p15, 0, \rp, c1, c0
-		tst	\rp, #1			@ MMU enabled?
-		ldreq	\rp, =OMAP_UART_INFO	@ MMU not enabled
-		ldrne	\rp, =omap_uart_p2v(OMAP_UART_INFO)	@ MMU enabled
-		ldr	\rp, [\rp, #0]
-
-		/* Select the UART to use based on the UART1 scratchpad value */
-10:		cmp	\rp, #0			@ no port configured?
-		beq	11f			@ if none, try to use UART1
-		cmp	\rp, #OMAP1UART1
-		beq	11f			@ configure OMAP1UART1
-		cmp	\rp, #OMAP1UART2
-		beq	12f			@ configure OMAP1UART2
-		cmp	\rp, #OMAP1UART3
-		beq	13f			@ configure OMAP2UART3
-
-		/* Configure the UART offset from the phys/virt base */
-11:		mov	\rp, #0x00fb0000	@ OMAP1UART1
-		b	98f
-12:		mov	\rp, #0x00fb0000	@ OMAP1UART1
-		orr	\rp, \rp, #0x00000800	@ OMAP1UART2
-		b	98f
-13:		mov	\rp, #0x00fb0000	@ OMAP1UART1
-		orr	\rp, \rp, #0x00000800	@ OMAP1UART2
-		orr	\rp, \rp, #0x00009000	@ OMAP1UART3
-
-		/* Store both phys and virt address for the uart */
-98:		add	\rp, \rp, #0xff000000	@ phys base
-		mrc	p15, 0, \rv, c1, c0
-		tst	\rv, #1			@ MMU enabled?
-		ldreq	\rv, =omap_uart_v2p(omap_uart_phys)	@ MMU disabled
-		ldrne	\rv, =omap_uart_phys	@ MMU enabled
-		str	\rp, [\rv, #0]
-		sub	\rp, \rp, #0xff000000	@ phys base
-		add	\rp, \rp, #0xfe000000	@ virt base
-		add	\rv, \rv, #4		@ omap_uart_lsr
-		str	\rp, [\rv, #0]
-		b	9b
-99:
 		.endm
 
 		.macro	senduart,rd,rx

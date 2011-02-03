@@ -15,20 +15,6 @@
 
 #include <linux/init.h>
 
-/*
- * Memory entry used for the DEBUG_LL UART configuration. See also
- * uncompress.h and debug-macro.S.
- *
- * Note that using a memory location for storing the UART configuration
- * has at least two limitations:
- *
- * 1. Kernel uncompress code cannot overlap OMAP_UART_INFO as the
- *    uncompress code could then partially overwrite itself
- * 2. We assume printascii is called at least once before paging_init,
- *    and addruart has a chance to read OMAP_UART_INFO
- */
-#define OMAP_UART_INFO		(PLAT_PHYS_OFFSET + 0x3ffc)
-
 /* OMAP1 serial ports */
 #define OMAP1_UART1_BASE	0xfffb0000
 #define OMAP1_UART2_BASE	0xfffb0800
@@ -62,26 +48,6 @@
 #define OMAP1510_BASE_BAUD	(12000000/16)
 #define OMAP16XX_BASE_BAUD	(48000000/16)
 #define OMAP24XX_BASE_BAUD	(48000000/16)
-
-/*
- * DEBUG_LL port encoding stored into the UART1 scratchpad register by
- * decomp_setup in uncompress.h
- */
-#define OMAP1UART1		11
-#define OMAP1UART2		12
-#define OMAP1UART3		13
-#define OMAP2UART1		21
-#define OMAP2UART2		22
-#define OMAP2UART3		23
-#define OMAP3UART1		OMAP2UART1
-#define OMAP3UART2		OMAP2UART2
-#define OMAP3UART3		33
-#define OMAP3UART4		34		/* Only on 36xx */
-#define OMAP4UART1		OMAP2UART1
-#define OMAP4UART2		OMAP2UART2
-#define OMAP4UART3		43
-#define OMAP4UART4		44
-#define ZOOM_UART		95		/* Only on zoom2/3 */
 
 /* This is only used by 8250.c for omap1510 */
 #define is_omap_port(pt)	({int __ret = 0;			\
