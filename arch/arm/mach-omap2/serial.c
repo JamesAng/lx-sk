@@ -104,6 +104,13 @@ struct omap_uart_state {
 #endif
 };
 
+#if defined(CONFIG_DEBUG_LL) && !defined(CONFIG_DEBUG_ICEDCC)
+/* Used by inituart, addruart and busyuart. See debug-macro.S */
+void __iomem *omap_uart_phys;
+void __iomem *omap_uart_virt;
+void __iomem *omap_uart_lsr;
+#endif
+
 static LIST_HEAD(uart_list);
 static u8 num_uarts;
 

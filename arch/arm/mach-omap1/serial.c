@@ -29,6 +29,13 @@
 
 #include "pm.h"
 
+#if defined(CONFIG_DEBUG_LL) && !defined(CONFIG_DEBUG_ICEDCC)
+/* Used by inituart, addruart and busyuart. See debug-macro.S */
+void __iomem *omap_uart_phys;
+void __iomem *omap_uart_virt;
+void __iomem *omap_uart_lsr;
+#endif
+
 static struct clk * uart1_ck;
 static struct clk * uart2_ck;
 static struct clk * uart3_ck;
