@@ -14,6 +14,9 @@
 #include <mach/hardware.h>
 #include <mach/regs-uart.h>
 
+	.macro	inituart, id, a, v
+	.endm
+
 	.macro	addruart, rp, rv
 		ldr	\rp, =KS8695_UART_PA		@ physical base address
 		ldr	\rv, =KS8695_UART_VA		@ virtual base address

@@ -14,6 +14,9 @@
 #include <mach/hardware.h>
 #include <mach/at91_dbgu.h>
 
+	.macro	inituart, id, a, v
+	.endm
+
 	.macro	addruart, rp, rv
 	ldr	\rp, =(AT91_BASE_SYS + AT91_DBGU)		@ System peripherals (phys address)
 	ldr	\rv, =(AT91_VA_BASE_SYS	+ AT91_DBGU)		@ System peripherals (virt address)

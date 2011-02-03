@@ -21,6 +21,9 @@
 	 * aligned and add in the offset when we load the value here.
 	 */
 
+	.macro	inituart, id, a, v
+	.endm
+
 	.macro addruart, rp, rv
 		ldr	\rp, = S3C_PA_UART
 		ldr	\rv, = S3C_VA_UART

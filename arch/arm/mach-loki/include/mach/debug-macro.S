@@ -8,6 +8,9 @@
 
 #include <mach/loki.h>
 
+	.macro	inituart, id, a, v
+	.endm
+
 	.macro	addruart, rp, rv
 	ldr	\rp, =LOKI_REGS_PHYS_BASE
 	ldr	\rv, =LOKI_REGS_VIRT_BASE

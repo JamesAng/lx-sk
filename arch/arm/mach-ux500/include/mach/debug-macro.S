@@ -35,6 +35,9 @@
 #define UX500_UART(n)	__UX500_UART(n)
 #define UART_BASE	UX500_UART(CONFIG_UX500_DEBUG_UART)
 
+	.macro	inituart, id, a, v
+	.endm
+
 	.macro	addruart, rp, rv
 	ldr	\rp, =UART_BASE				@ no, physical address
 	ldr	\rv, =IO_ADDRESS(UART_BASE)		@ yes, virtual address

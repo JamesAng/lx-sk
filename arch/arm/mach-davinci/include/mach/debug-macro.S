@@ -29,6 +29,9 @@ davinci_uart_phys:	.word	0
 davinci_uart_virt:	.word	0
 		.popsection
 
+		.macro	inituart, id, a, v
+		.endm
+
 		.macro addruart, rp, rv
 
 		/* Use davinci_uart_phys/virt if already configured */

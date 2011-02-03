@@ -12,6 +12,9 @@
 */
 #include <mach/hardware.h>
 
+		.macro	inituart, id, a, v
+		.endm
+
 		.macro	addruart, rp, rv
 		mrc	p15, 0, \rp, c1, c0
 		tst	\rp, #1			@ MMU enabled?

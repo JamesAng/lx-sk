@@ -8,6 +8,9 @@
 
 #include <mach/mv78xx0.h>
 
+	.macro	inituart, id, a, v
+	.endm
+
 	.macro	addruart, rp, rv
 	ldr	\rp, =MV78XX0_REGS_PHYS_BASE
 	ldr	\rv, =MV78XX0_REGS_VIRT_BASE

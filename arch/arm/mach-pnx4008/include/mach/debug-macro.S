@@ -11,6 +11,9 @@
  *
 */
 
+		.macro	inituart, id, a, v
+		.endm
+
 		.macro	addruart, rp, rv
 		mov	\rp, #0x00090000
 		add	\rv, \rp, #0xf4000000	@ virtual

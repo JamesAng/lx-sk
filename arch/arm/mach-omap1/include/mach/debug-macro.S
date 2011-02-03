@@ -25,6 +25,9 @@ omap_uart_phys:	.word	0x0
 omap_uart_virt:	.word	0x0
 		.popsection
 
+		.macro	inituart, id, a, v
+		.endm
+
 		/*
 		 * Note that this code won't work if the bootloader passes
 		 * a wrong machine ID number in r1. To debug, just hardcode

@@ -14,6 +14,9 @@
 		.equ	io_virt, IO_BASE
 		.equ	io_phys, IO_START
 
+		.macro	inituart, id, a, v
+		.endm
+
 		.macro	addruart, rp, rv
 		mov	\rp, #0x00044000	@ UART1
 @		mov	\rp, #0x00045000	@ UART2

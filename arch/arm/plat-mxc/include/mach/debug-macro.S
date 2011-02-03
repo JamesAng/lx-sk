@@ -53,6 +53,9 @@
 
 #define UART_VADDR	IMX_IO_ADDRESS(UART_PADDR)
 
+		.macro	inituart, id, a, v
+		.endm
+
 		.macro	addruart, rp, rv
 		ldr	\rp, =UART_PADDR	@ physical
 		ldr	\rv, =UART_VADDR	@ virtual

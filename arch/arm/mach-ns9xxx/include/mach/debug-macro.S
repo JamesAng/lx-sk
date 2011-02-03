@@ -12,6 +12,9 @@
 
 #include <mach/regs-board-a9m9750dev.h>
 
+		.macro	inituart, id, a, v
+		.endm
+
 		.macro	addruart, rp, rv
 		ldr	\rp, =NS9XXX_CSxSTAT_PHYS(0)
 		ldr	\rv, =io_p2v(NS9XXX_CSxSTAT_PHYS(0))

@@ -14,6 +14,9 @@
 #include <mach/hardware.h>
 #include <asm/hardware/clps7111.h>
 
+		.macro	inituart, id, a, v
+		.endm
+
 		.macro	addruart, rp, rv
 #ifndef CONFIG_DEBUG_CLPS711X_UART2
 		mov	\rp, #0x0000	@ UART1

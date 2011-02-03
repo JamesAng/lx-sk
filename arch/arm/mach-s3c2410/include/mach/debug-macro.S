@@ -19,6 +19,9 @@
 #define S3C2410_UART1_OFF (0x4000)
 #define SHIFT_2440TXF (14-9)
 
+	.macro	inituart, id, a, v
+	.endm
+
 	.macro addruart, rp, rv
 		ldr	\rp, = S3C24XX_PA_UART
 		ldr	\rv, = S3C24XX_VA_UART

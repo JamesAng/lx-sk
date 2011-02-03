@@ -15,6 +15,9 @@
 
 #include <plat/regs-serial.h>
 
+	.macro	inituart, id, a, v
+	.endm
+
 	.macro addruart, rp, rv
 		mov	\rp, #0xE0000000
 		orr	\rp, \rp, #0x00100000

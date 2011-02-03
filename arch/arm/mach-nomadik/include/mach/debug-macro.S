@@ -10,6 +10,9 @@
  *
 */
 
+		.macro	inituart, id, a, v
+		.endm
+
 		.macro	addruart, rp, rv
 		mov	\rp, #0x00100000
 		add	\rp, \rp, #0x000fb000

@@ -12,6 +12,9 @@
 
 #define DEBUG_LL_UART_OFFSET	0x00009000
 
+		.macro	inituart, id, a, v
+		.endm
+
 		.macro	addruart,rp,rv
 		mov	\rp, #DEBUG_LL_UART_OFFSET
 		orr	\rv, \rp, #0xf8000000	@ virtual base

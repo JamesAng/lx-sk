@@ -13,6 +13,9 @@
 
 #include "hardware.h"
 
+		.macro	inituart, id, a, v
+		.endm
+
 		.macro	addruart, rp, rv
 		mov	\rp, #0x00100000
 		orr	\rv, \rp, #io_p2v(0x40000000)	@ virtual

@@ -10,6 +10,10 @@
  */
 
 #include "hardware.h"
+
+		.macro	inituart, id, a, v
+		.endm
+
 		.macro	addruart, rp, rv
 		mov	\rp, 0x00000800
 		orr	\rv, \rp, #io_p2v(0x80000000)	@ virtual

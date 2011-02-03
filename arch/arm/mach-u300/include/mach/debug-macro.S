@@ -10,6 +10,9 @@
  */
 #include <mach/hardware.h>
 
+	.macro	inituart, id, a, v
+	.endm
+
 	.macro	addruart, rp, rv
 	/* If we move the address using MMU, use this. */
 	ldr	\rp,	  = U300_SLOW_PER_PHYS_BASE @ MMU off, physical address

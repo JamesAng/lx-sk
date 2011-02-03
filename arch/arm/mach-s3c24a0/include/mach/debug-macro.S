@@ -10,6 +10,9 @@
 #include <mach/map.h>
 #include <plat/regs-serial.h>
 
+	.macro	inituart, id, a, v
+	.endm
+
 	.macro addruart, rp, rv
 		ldr	\rp, = S3C24XX_PA_UART
 		ldr	\rv, = S3C24XX_VA_UART

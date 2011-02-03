@@ -11,6 +11,9 @@
  */
 #include <mach/ep93xx-regs.h>
 
+		.macro	inituart, id, a, v
+		.endm
+
 		.macro	addruart, rp, rv
 		ldr	\rp, =EP93XX_APB_PHYS_BASE	@ Physical base
 		ldr	\rv, =EP93XX_APB_VIRT_BASE	@ virtual base

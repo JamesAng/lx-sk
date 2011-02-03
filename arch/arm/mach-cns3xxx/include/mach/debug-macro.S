@@ -10,6 +10,9 @@
  * published by the Free Software Foundation.
  */
 
+		.macro	inituart, id, a, v
+		.endm
+
 		.macro	addruart,rp,rv
 		mov	\rp, #0x00009000
 		orr	\rv, \rp, #0xf0000000	@ virtual base

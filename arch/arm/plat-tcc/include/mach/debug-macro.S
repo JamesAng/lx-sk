@@ -9,6 +9,9 @@
  *
  */
 
+		.macro	inituart, id, a, v
+		.endm
+
 		.macro	addruart, rp, rv
 		moveq	\rp, #0x90000000	@ physical base address
 		movne	\rv, #0xF1000000	@ virtual base

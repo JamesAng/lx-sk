@@ -15,6 +15,10 @@
 
 #ifndef CONFIG_DEBUG_DC21285_PORT
 	/* For NetWinder debugging */
+
+		.macro	inituart, id, a, v
+		.endm
+
 		.macro	addruart, rp, rv
 		mov	\rp, #0x000003f8
 		orr	\rv, \rp, #0xff000000	@ virtual

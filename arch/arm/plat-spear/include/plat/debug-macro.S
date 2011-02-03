@@ -14,6 +14,9 @@
 #include <linux/amba/serial.h>
 #include <mach/spear.h>
 
+		.macro	inituart, id, a, v
+		.endm
+
 		.macro	addruart, rp, rv
 		mov	\rp, #SPEAR_DBG_UART_BASE		@ Physical base
 		mov	\rv, #VA_SPEAR_DBG_UART_BASE		@ Virtual base

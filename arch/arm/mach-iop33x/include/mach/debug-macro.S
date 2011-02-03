@@ -11,6 +11,9 @@
  * published by the Free Software Foundation.
  */
 
+		.macro	inituart, id, a, v
+		.endm
+
 		.macro	addruart, rp, rv
 		mov	\rp, #0x00ff0000
 		orr	\rp, \rp, #0x0000f700
