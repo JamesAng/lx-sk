@@ -13,6 +13,8 @@
 
 MKIMAGE         := $(srctree)/scripts/mkuboot.sh
 
+DTC_FLAGS := -p 1024
+
 ifneq ($(MACHINE),)
 include $(srctree)/$(MACHINE)/Makefile.boot
 endif
@@ -58,6 +60,10 @@ $(obj)/zImage:	$(obj)/compressed/vmlinux FORCE
 	@echo '  Kernel: $@ is ready'
 
 endif
+
+# Rule to build device tree blobs
+$(obj)/%.dtb: $(src)/dts/%.dts
+	$(call cmd,dtc)
 
 quiet_cmd_uimage = UIMAGE  $@
       cmd_uimage = $(CONFIG_SHELL) $(MKIMAGE) -A arm -O linux -T kernel \
