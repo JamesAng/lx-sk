@@ -386,64 +386,14 @@ int write_ext_dsp_data(struct bridge_dev_context *dev_context,
 
 int sm_interrupt_dsp(struct bridge_dev_context *dev_context, u16 mb_val)
 {
-#ifdef CONFIG_TIDSPBRIDGE_DVFS
-	u32 opplevel = 0;
-#endif
-	struct omap_dsp_platform_data *pdata =
-		omap_dspbridge_dev->dev.platform_data;
-	struct cfg_hostres *resources = dev_context->resources;
-	int status = 0;
-	u32 temp;
+	int status;
 
 	if (!dev_context->mbox)
 		return 0;
 
-	if (!resources)
-		return -EPERM;
-
-	if (dev_context->brd_state == BRD_DSP_HIBERNATION ||
-	    dev_context->brd_state == BRD_HIBERNATION) {
-#ifdef CONFIG_TIDSPBRIDGE_DVFS
-		if (pdata->dsp_get_opp)
-			opplevel = (*pdata->dsp_get_opp) ();
-		if (opplevel == VDD1_OPP1) {
-			if (pdata->dsp_set_min_opp)
-				(*pdata->dsp_set_min_opp) (VDD1_OPP2);
-		}
-#endif
-		/* Restart the peripheral clocks */
-		dsp_clock_enable_all(dev_context->dsp_per_clks);
-		dsp_wdt_enable(true);
-
-		/*
-		 * 2:0 AUTO_IVA2_DPLL - Enabling IVA2 DPLL auto control
-		 *     in CM_AUTOIDLE_PLL_IVA2 register
-		 */
-		(*pdata->dsp_cm_write)(1 << OMAP3430_AUTO_IVA2_DPLL_SHIFT,
-				OMAP3430_IVA2_MOD, OMAP3430_CM_AUTOIDLE_PLL);
-
-		/*
-		 * 7:4 IVA2_DPLL_FREQSEL - IVA2 internal frq set to
-		 *     0.75 MHz - 1.0 MHz
-		 * 2:0 EN_IVA2_DPLL - Enable IVA2 DPLL in lock mode
-		 */
-		(*pdata->dsp_cm_rmw_bits)(OMAP3430_IVA2_DPLL_FREQSEL_MASK |
-				OMAP3430_EN_IVA2_DPLL_MASK,
-				0x3 << OMAP3430_IVA2_DPLL_FREQSEL_SHIFT |
-				0x7 << OMAP3430_EN_IVA2_DPLL_SHIFT,
-				OMAP3430_IVA2_MOD, OMAP3430_CM_CLKEN_PLL);
-
-		/* Restore mailbox settings */
-		omap_mbox_restore_ctx(dev_context->mbox);
-
-		/* Access MMU SYS CONFIG register to generate a short wakeup */
-		temp = readl(resources->dmmu_base + 0x10);
-
-		dev_context->brd_state = BRD_RUNNING;
-	} else if (dev_context->brd_state == BRD_RETENTION) {
-		/* Restart the peripheral clocks */
-		dsp_clock_enable_all(dev_context->dsp_per_clks);
-	}
+	status = wake_dsp(dev_context, NULL);
+	if (status)
+		return status;
 
 	status = omap_mbox_msg_send(dev_context->mbox, mb_val);
 
