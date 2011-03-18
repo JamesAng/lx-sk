@@ -104,36 +104,31 @@ int handle_hibernation_from_dsp(struct bridge_dev_context *dev_context)
 	if (!t) {
 		pr_err("%s: Timed out waiting for DSP off mode\n", __func__);
 		return -ETIMEDOUT;
-	} else {
-
-		/* Save mailbox settings */
-		omap_mbox_save_ctx(dev_context->mbox);
-
-		/* Turn off DSP Peripheral clocks and DSP Load monitor timer */
-		status = dsp_clock_disable_all(dev_context->dsp_per_clks);
-
-		/* Disable wdt on hibernation. */
-		dsp_wdt_enable(false);
-
-		if (!status) {
-			/* Update the Bridger Driver state */
-			dev_context->brd_state = BRD_DSP_HIBERNATION;
-#ifdef CONFIG_TIDSPBRIDGE_DVFS
-			status =
-			    dev_get_io_mgr(dev_context->dev_obj, &hio_mgr);
-			if (!hio_mgr)
-				return -EINVAL;
-			io_sh_msetting(hio_mgr, SHM_GETOPP, &opplevel);
-
-			/*
-			 * Set the OPP to low level before moving to OFF
-			 * mode
-			 */
-			if (pdata->dsp_set_min_opp)
-				(*pdata->dsp_set_min_opp) (VDD1_OPP1);
-#endif /* CONFIG_TIDSPBRIDGE_DVFS */
-		}
 	}
+
+	/* Save mailbox settings */
+	omap_mbox_save_ctx(dev_context->mbox);
+
+	/* Turn off DSP Peripheral clocks and DSP Load monitor timer */
+	status = dsp_clock_disable_all(dev_context->dsp_per_clks);
+	if (status)
+		return status;
+
+	/* Disable wdt on hibernation. */
+	dsp_wdt_enable(false);
+
+	/* Update the Bridger Driver state */
+	dev_context->brd_state = BRD_DSP_HIBERNATION;
+#ifdef CONFIG_TIDSPBRIDGE_DVFS
+	status = dev_get_io_mgr(dev_context->dev_obj, &hio_mgr);
+	if (!hio_mgr)
+		return -EINVAL;
+	io_sh_msetting(hio_mgr, SHM_GETOPP, &opplevel);
+
+	/* Set the OPP to low level before moving to OFF mode */
+	if (pdata->dsp_set_min_opp)
+		(*pdata->dsp_set_min_opp) (VDD1_OPP1);
+#endif /* CONFIG_TIDSPBRIDGE_DVFS */
 #endif
 	return status;
 }
@@ -218,30 +213,30 @@ int sleep_dsp(struct bridge_dev_context *dev_context, u32 dw_cmd,
 		bridge_deh_notify(hdeh_mgr, DSP_PWRERROR, 0);
 #endif /* CONFIG_TIDSPBRIDGE_NTFY_PWRERR */
 		return -ETIMEDOUT;
-	} else {
-		/* Update the Bridger Driver state */
-		if (dsp_test_sleepstate == PWRDM_POWER_OFF)
-			dev_context->brd_state = BRD_HIBERNATION;
-		else
-			dev_context->brd_state = BRD_RETENTION;
-
-		/* Disable wdt on hibernation. */
-		dsp_wdt_enable(false);
-
-		/* Turn off DSP Peripheral clocks */
-		status = dsp_clock_disable_all(dev_context->dsp_per_clks);
-		if (status)
-			return status;
-#ifdef CONFIG_TIDSPBRIDGE_DVFS
-		else if (target_pwr_state == PWRDM_POWER_OFF) {
-			/*
-			 * Set the OPP to low level before moving to OFF mode
-			 */
-			if (pdata->dsp_set_min_opp)
-				(*pdata->dsp_set_min_opp) (VDD1_OPP1);
-		}
-#endif /* CONFIG_TIDSPBRIDGE_DVFS */
 	}
+
+	/* Update the Bridger Driver state */
+	if (dsp_test_sleepstate == PWRDM_POWER_OFF)
+		dev_context->brd_state = BRD_HIBERNATION;
+	else
+		dev_context->brd_state = BRD_RETENTION;
+
+	/* Disable wdt on hibernation. */
+	dsp_wdt_enable(false);
+
+	/* Turn off DSP Peripheral clocks */
+	status = dsp_clock_disable_all(dev_context->dsp_per_clks);
+	if (status)
+		return status;
+#ifdef CONFIG_TIDSPBRIDGE_DVFS
+	if (target_pwr_state == PWRDM_POWER_OFF) {
+		/*
+		 * Set the OPP to low level before moving to OFF mode
+		 */
+		if (pdata->dsp_set_min_opp)
+			(*pdata->dsp_set_min_opp) (VDD1_OPP1);
+	}
+#endif /* CONFIG_TIDSPBRIDGE_DVFS */
 #endif /* CONFIG_PM */
 	return status;
 }
