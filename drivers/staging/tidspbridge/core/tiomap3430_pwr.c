@@ -103,8 +103,7 @@ int handle_hibernation_from_dsp(struct bridge_dev_context *dev_context)
 
 	if (!t) {
 		pr_err("%s: Timed out waiting for DSP off mode\n", __func__);
-		status = -ETIMEDOUT;
-		return status;
+		return -ETIMEDOUT;
 	} else {
 
 		/* Save mailbox settings */
@@ -122,10 +121,8 @@ int handle_hibernation_from_dsp(struct bridge_dev_context *dev_context)
 #ifdef CONFIG_TIDSPBRIDGE_DVFS
 			status =
 			    dev_get_io_mgr(dev_context->dev_obj, &hio_mgr);
-			if (!hio_mgr) {
-				status = DSP_EHANDLE;
-				return status;
-			}
+			if (!hio_mgr)
+				return -EINVAL;
 			io_sh_msetting(hio_mgr, SHM_GETOPP, &opplevel);
 
 			/*
@@ -134,7 +131,6 @@ int handle_hibernation_from_dsp(struct bridge_dev_context *dev_context)
 			 */
 			if (pdata->dsp_set_min_opp)
 				(*pdata->dsp_set_min_opp) (VDD1_OPP1);
-			status = 0;
 #endif /* CONFIG_TIDSPBRIDGE_DVFS */
 		}
 	}
