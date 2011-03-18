@@ -49,6 +49,8 @@
 
 #define PWRSTST_TIMEOUT          200
 
+DEFINE_SPINLOCK(pwr_lock);
+
 /*
  *  ======== handle_constraints_set ========
  *  	Sets new DSP constraint
@@ -91,6 +93,8 @@ int handle_hibernation_from_dsp(struct bridge_dev_context *dev_context)
 	struct omap_dsp_platform_data *pdata =
 		omap_dspbridge_dev->dev.platform_data;
 
+	spin_lock_bh(&pwr_lock);
+
 	/* Wait for DSP to move into OFF state */
 	v = msecs_to_jiffies(PWRSTST_TIMEOUT) + jiffies;
 	do {
@@ -103,6 +107,7 @@ int handle_hibernation_from_dsp(struct bridge_dev_context *dev_context)
 
 	if (!t) {
 		pr_err("%s: Timed out waiting for DSP off mode\n", __func__);
+		spin_unlock_bh(&pwr_lock);
 		return -ETIMEDOUT;
 	}
 
@@ -111,14 +116,19 @@ int handle_hibernation_from_dsp(struct bridge_dev_context *dev_context)
 
 	/* Turn off DSP Peripheral clocks and DSP Load monitor timer */
 	status = dsp_clock_disable_all(dev_context->dsp_per_clks);
-	if (status)
+	if (status) {
+		spin_unlock_bh(&pwr_lock);
 		return status;
+	}
 
 	/* Disable wdt on hibernation. */
 	dsp_wdt_enable(false);
 
 	/* Update the Bridger Driver state */
 	dev_context->brd_state = BRD_DSP_HIBERNATION;
+
+	spin_unlock_bh(&pwr_lock);
+
 #ifdef CONFIG_TIDSPBRIDGE_DVFS
 	status = dev_get_io_mgr(dev_context->dev_obj, &hio_mgr);
 	if (!hio_mgr)
@@ -189,11 +199,15 @@ int sleep_dsp(struct bridge_dev_context *dev_context, u32 dw_cmd,
 		return -EPERM;
 	}
 
+	spin_lock_bh(&pwr_lock);
+
 	omap_mbox_save_ctx(dev_context->mbox);
 
 	status = omap_mbox_msg_send(dev_context->mbox, mbx_msg);
-	if (status)
+	if (status) {
+		spin_unlock_bh(&pwr_lock);
 		return status;
+	}
 
 	/* Wait for DSP to move into target power state */
 	v = msecs_to_jiffies(PWRSTST_TIMEOUT) + jiffies;
@@ -212,6 +226,7 @@ int sleep_dsp(struct bridge_dev_context *dev_context, u32 dw_cmd,
 		dev_get_deh_mgr(dev_context->dev_obj, &hdeh_mgr);
 		bridge_deh_notify(hdeh_mgr, DSP_PWRERROR, 0);
 #endif /* CONFIG_TIDSPBRIDGE_NTFY_PWRERR */
+		spin_unlock_bh(&pwr_lock);
 		return -ETIMEDOUT;
 	}
 
@@ -226,8 +241,13 @@ int sleep_dsp(struct bridge_dev_context *dev_context, u32 dw_cmd,
 
 	/* Turn off DSP Peripheral clocks */
 	status = dsp_clock_disable_all(dev_context->dsp_per_clks);
-	if (status)
+	if (status) {
+		spin_unlock_bh(&pwr_lock);
 		return status;
+	}
+
+	spin_unlock_bh(&pwr_lock);
+
 #ifdef CONFIG_TIDSPBRIDGE_DVFS
 	if (target_pwr_state == PWRDM_POWER_OFF) {
 		/*
@@ -259,8 +279,11 @@ int wake_dsp(struct bridge_dev_context *dev_context, void *pargs)
 	if (!dev_context->mbox || !resources)
 		return -EPERM;
 
+	spin_lock_bh(&pwr_lock);
+
 	switch (dev_context->brd_state) {
 	case BRD_STOPPED:
+		spin_unlock_bh(&pwr_lock);
 		return 0;
 	case BRD_RUNNING:
 		break;
@@ -318,11 +341,14 @@ int wake_dsp(struct bridge_dev_context *dev_context, void *pargs)
 	default:
 		pr_err("%s: unexpected state %x\n", __func__,
 						dev_context->brd_state);
+		spin_unlock_bh(&pwr_lock);
 		return -EINVAL;
 	}
 
 	/* Send a wakeup message to DSP */
 	status = omap_mbox_msg_send(dev_context->mbox, MBX_PM_DSPWAKEUP);
+
+	spin_unlock_bh(&pwr_lock);
 
 #endif /* CONFIG_PM */
 	return status;
