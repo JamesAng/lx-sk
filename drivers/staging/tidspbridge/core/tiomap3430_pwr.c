@@ -274,6 +274,10 @@ int wake_dsp(struct bridge_dev_context *dev_context, void *pargs)
 		/* Restart the peripheral clocks */
 		dsp_clock_enable_all(dev_context->dsp_per_clks);
 
+		dsp_wdt_enable(true);
+
+		dev_context->brd_state = BRD_RUNNING;
+
 		break;
 	case BRD_HIBERNATION:
 	case BRD_DSP_HIBERNATION:
