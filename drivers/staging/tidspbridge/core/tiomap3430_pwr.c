@@ -156,6 +156,7 @@ int sleep_dsp(struct bridge_dev_context *dev_context, u32 dw_cmd,
 #endif /* CONFIG_TIDSPBRIDGE_NTFY_PWRERR */
 	u8 t;
 	unsigned long v;
+	u32 mbx_msg;
 	u32 pwr_state, target_pwr_state;
 	struct omap_dsp_platform_data *pdata =
 		omap_dspbridge_dev->dev.platform_data;
@@ -166,21 +167,19 @@ int sleep_dsp(struct bridge_dev_context *dev_context, u32 dw_cmd,
 
 	switch (dev_context->brd_state) {
 	case BRD_RUNNING:
-		omap_mbox_save_ctx(dev_context->mbox);
 		if (dsp_test_sleepstate == PWRDM_POWER_OFF) {
-			sm_interrupt_dsp(dev_context, MBX_PM_DSPHIBERNATE);
+			mbx_msg = MBX_PM_DSPHIBERNATE;
 			dev_dbg(bridge, "PM: %s - sent hibernate cmd to DSP\n",
 				__func__);
 			target_pwr_state = PWRDM_POWER_OFF;
 		} else {
-			sm_interrupt_dsp(dev_context, MBX_PM_DSPRETENTION);
+			mbx_msg = MBX_PM_DSPRETENTION;
 			target_pwr_state = PWRDM_POWER_RET;
 		}
 		break;
 	case BRD_RETENTION:
-		omap_mbox_save_ctx(dev_context->mbox);
 		if (dsp_test_sleepstate == PWRDM_POWER_OFF) {
-			sm_interrupt_dsp(dev_context, MBX_PM_DSPHIBERNATE);
+			mbx_msg = MBX_PM_DSPHIBERNATE;
 			target_pwr_state = PWRDM_POWER_OFF;
 		} else
 			return 0;
@@ -198,6 +197,12 @@ int sleep_dsp(struct bridge_dev_context *dev_context, u32 dw_cmd,
 		dev_dbg(bridge, "PM: %s - Bridge in Illegal state\n", __func__);
 		return -EPERM;
 	}
+
+	omap_mbox_save_ctx(dev_context->mbox);
+
+	status = omap_mbox_msg_send(dev_context->mbox, mbx_msg);
+	if (status)
+		return status;
 
 	/* Wait for DSP to move into target power state */
 	v = msecs_to_jiffies(PWRSTST_TIMEOUT) + jiffies;
