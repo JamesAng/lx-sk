@@ -270,8 +270,9 @@ int wake_dsp(struct bridge_dev_context *dev_context, void *pargs)
 
 	switch (dev_context->brd_state) {
 	case BRD_STOPPED:
-	case BRD_RUNNING:
 		return 0;
+	case BRD_RUNNING:
+		break;
 	case BRD_RETENTION:
 		/* Restart the peripheral clocks */
 		dsp_clock_enable_all(dev_context->dsp_per_clks);
