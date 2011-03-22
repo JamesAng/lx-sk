@@ -81,7 +81,8 @@ int handle_hibernation_from_dsp(struct bridge_dev_context *dev_context)
 {
 	int status = 0;
 #ifdef CONFIG_PM
-	u16 timeout = PWRSTST_TIMEOUT / 10;
+	u8 t;
+	unsigned long v;
 	u32 pwr_state;
 #ifdef CONFIG_TIDSPBRIDGE_DVFS
 	u32 opplevel;
@@ -90,18 +91,17 @@ int handle_hibernation_from_dsp(struct bridge_dev_context *dev_context)
 	struct omap_dsp_platform_data *pdata =
 		omap_dspbridge_dev->dev.platform_data;
 
-	pwr_state = (*pdata->dsp_prm_read)(OMAP3430_IVA2_MOD, OMAP2_PM_PWSTST) &
-						OMAP_POWERSTATEST_MASK;
 	/* Wait for DSP to move into OFF state */
-	while ((pwr_state != PWRDM_POWER_OFF) && --timeout) {
-		if (msleep_interruptible(10)) {
-			pr_err("Waiting for DSP OFF mode interrupted\n");
-			return -EPERM;
-		}
+	v = msecs_to_jiffies(PWRSTST_TIMEOUT) + jiffies;
+	do {
+		t = time_is_after_jiffies(v);
 		pwr_state = (*pdata->dsp_prm_read)(OMAP3430_IVA2_MOD,
 					OMAP2_PM_PWSTST) & OMAP_POWERSTATEST_MASK;
-	}
-	if (timeout == 0) {
+		if (pwr_state == PWRDM_POWER_OFF)
+			break;
+	} while (t);
+
+	if (!t) {
 		pr_err("%s: Timed out waiting for DSP off mode\n", __func__);
 		status = -ETIMEDOUT;
 		return status;
@@ -154,7 +154,8 @@ int sleep_dsp(struct bridge_dev_context *dev_context, u32 dw_cmd,
 #ifdef CONFIG_TIDSPBRIDGE_NTFY_PWRERR
 	struct deh_mgr *hdeh_mgr;
 #endif /* CONFIG_TIDSPBRIDGE_NTFY_PWRERR */
-	u16 timeout = PWRSTST_TIMEOUT / 10;
+	u8 t;
+	unsigned long v;
 	u32 pwr_state, target_pwr_state;
 	struct omap_dsp_platform_data *pdata =
 		omap_dspbridge_dev->dev.platform_data;
@@ -198,21 +199,17 @@ int sleep_dsp(struct bridge_dev_context *dev_context, u32 dw_cmd,
 		return -EPERM;
 	}
 
-	/* Get the PRCM DSP power domain status */
-	pwr_state = (*pdata->dsp_prm_read)(OMAP3430_IVA2_MOD, OMAP2_PM_PWSTST) &
-						OMAP_POWERSTATEST_MASK;
-
 	/* Wait for DSP to move into target power state */
-	while ((pwr_state != target_pwr_state) && --timeout) {
-		if (msleep_interruptible(10)) {
-			pr_err("Waiting for DSP to Suspend interrupted\n");
-			return -EPERM;
-		}
+	v = msecs_to_jiffies(PWRSTST_TIMEOUT) + jiffies;
+	do {
+		t = time_is_after_jiffies(v);
 		pwr_state = (*pdata->dsp_prm_read)(OMAP3430_IVA2_MOD,
 					OMAP2_PM_PWSTST) & OMAP_POWERSTATEST_MASK;
-	}
+		if (pwr_state == target_pwr_state)
+			break;
+	} while (t);
 
-	if (!timeout) {
+	if (!t) {
 		pr_err("%s: Timed out waiting for DSP off mode, state %x\n",
 		       __func__, pwr_state);
 #ifdef CONFIG_TIDSPBRIDGE_NTFY_PWRERR
