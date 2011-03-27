@@ -830,8 +830,6 @@ static struct machine_desc * __init setup_machine_tags(unsigned int nr)
 		dump_machine_table(); /* does not return */
 	}
 
-	printk("Machine: %s\n", mdesc->name);
-
 	if (__atags_pointer)
 		tags = phys_to_virt(__atags_pointer);
 	else if (mdesc->boot_params)
@@ -845,8 +843,17 @@ static struct machine_desc * __init setup_machine_tags(unsigned int nr)
 	if (tags->hdr.tag != ATAG_CORE)
 		convert_to_tag_list(tags);
 #endif
-	if (tags->hdr.tag != ATAG_CORE)
+
+	if (tags->hdr.tag != ATAG_CORE) {
+#if defined(CONFIG_OF)
+		/*
+		 * If CONFIG_OF is set, then assume this is a reasonably
+		 * modern system that should pass boot parameters
+		 */
+		early_print("Warning: Neither atags nor dtb found\n");
+#endif
 		tags = (struct tag *)&init_tags;
+	}
 
 	if (mdesc->fixup)
 		mdesc->fixup(mdesc, tags, &from, &meminfo);
