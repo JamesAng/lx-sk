@@ -13,8 +13,6 @@
 
 MKIMAGE         := $(srctree)/scripts/mkuboot.sh
 
-DTC_FLAGS := -p 1024
-
 ifneq ($(MACHINE),)
 include $(srctree)/$(MACHINE)/Makefile.boot
 endif
