@@ -710,5 +710,5 @@ MACHINE_START(IGEP0020, "IGEP v2 board")
 	.init_early	= igep2_init_early,
 	.init_irq	= omap3_init_irq,
 	.init_machine	= igep2_init,
-	.timer		= &omap_timer,
+	.timer		= &omap3_timer,
 MACHINE_END

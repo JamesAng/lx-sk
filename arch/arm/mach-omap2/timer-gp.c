@@ -247,20 +247,67 @@ static void __init omap2_gp_clocksource_init(void)
 }
 #endif
 
-static void __init omap2_gp_timer_init(void)
+#ifdef CONFIG_ARCH_OMAP2
+static void __init omap242x_timer_init(void)
 {
-#ifdef CONFIG_LOCAL_TIMERS
-	if (cpu_is_omap44xx()) {
-		twd_base = ioremap(OMAP44XX_LOCAL_TWD_BASE, SZ_256);
-		BUG_ON(!twd_base);
-	}
-#endif
 	omap_dm_timer_init();
-
 	omap2_gp_clockevent_init();
 	omap2_gp_clocksource_init();
 }
 
-struct sys_timer omap_timer = {
-	.init	= omap2_gp_timer_init,
+struct sys_timer omap242x_timer = {
+	.init	= omap242x_timer_init,
 };
+
+static void __init omap243x_timer_init(void)
+{
+	omap_dm_timer_init();
+	omap2_gp_clockevent_init();
+	omap2_gp_clocksource_init();
+}
+
+struct sys_timer omap243x_timer = {
+	.init	= omap243x_timer_init,
+};
+#endif
+
+#ifdef CONFIG_ARCH_OMAP3
+static void __init omap3_timer_init(void)
+{
+	omap_dm_timer_init();
+	omap2_gp_clockevent_init();
+	omap2_gp_clocksource_init();
+}
+
+struct sys_timer omap3_timer = {
+	.init	= omap3_timer_init,
+};
+
+static void __init omap3_beagle_timer_init(void)
+{
+	omap_dm_timer_init();
+	omap2_gp_clockevent_init();
+	omap2_gp_clocksource_init();
+}
+
+struct sys_timer omap3_beagle_timer = {
+	.init	= omap3_beagle_timer_init,
+};
+#endif
+
+#ifdef CONFIG_ARCH_OMAP4
+static void __init omap4_timer_init(void)
+{
+#ifdef CONFIG_LOCAL_TIMERS
+	twd_base = ioremap(OMAP44XX_LOCAL_TWD_BASE, SZ_256);
+	BUG_ON(!twd_base);
+#endif
+	omap_dm_timer_init();
+	omap2_gp_clockevent_init();
+	omap2_gp_clocksource_init();
+}
+
+struct sys_timer omap4_timer = {
+	.init	= omap4_timer_init,
+};
+#endif

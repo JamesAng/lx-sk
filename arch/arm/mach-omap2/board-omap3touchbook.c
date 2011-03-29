@@ -546,5 +546,5 @@ MACHINE_START(TOUCHBOOK, "OMAP3 touchbook Board")
 	.init_early	= omap3_touchbook_init_early,
 	.init_irq	= omap3_touchbook_init_irq,
 	.init_machine	= omap3_touchbook_init,
-	.timer		= &omap_timer,
+	.timer		= &omap3_beagle_timer,
 MACHINE_END
