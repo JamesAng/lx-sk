@@ -218,4 +218,57 @@ struct omap_dm_timer {
 	unsigned posted:1;
 };
 
+void __omap_dm_timer_reset(struct omap_dm_timer *timer, int autoidle,
+				int wakeup);
+void omap_dm_timer_prepare(struct omap_dm_timer *timer);
+int __omap_dm_timer_set_source(struct clk *timer_fck, struct clk *parent);
+void __omap_dm_timer_stop(void __iomem *base, int posted, unsigned long rate);
+
+static inline u32 __omap_dm_timer_read(void __iomem *base, u32 reg, int posted)
+{
+	if (posted)
+		while (__raw_readl(base + (OMAP_TIMER_WRITE_PEND_REG & 0xff))
+				& (reg >> WPSHIFT))
+			cpu_relax();
+
+	return __raw_readl(base + (reg & 0xff));
+}
+
+static inline void __omap_dm_timer_write(void __iomem *base, u32 reg, u32 val,
+						int posted)
+{
+	if (posted)
+		while (__raw_readl(base + (OMAP_TIMER_WRITE_PEND_REG & 0xff))
+				& (reg >> WPSHIFT))
+			cpu_relax();
+
+	__raw_writel(val, base + (reg & 0xff));
+}
+
+static inline void __omap_dm_timer_load_start(void __iomem *base, u32 ctrl,
+						unsigned int load, int posted)
+{
+	__omap_dm_timer_write(base, OMAP_TIMER_COUNTER_REG, load, posted);
+	__omap_dm_timer_write(base, OMAP_TIMER_CTRL_REG, ctrl, posted);
+}
+
+static inline void __omap_dm_timer_int_enable(void __iomem *base,
+						unsigned int value)
+{
+	__omap_dm_timer_write(base, OMAP_TIMER_INT_EN_REG, value, 0);
+	__omap_dm_timer_write(base, OMAP_TIMER_WAKEUP_EN_REG, value, 0);
+}
+
+static inline unsigned int __omap_dm_timer_read_counter(void __iomem *base,
+							int posted)
+{
+	return __omap_dm_timer_read(base, OMAP_TIMER_COUNTER_REG, posted);
+}
+
+static inline void __omap_dm_timer_write_status(void __iomem *base,
+						unsigned int value)
+{
+	__omap_dm_timer_write(base, OMAP_TIMER_STAT_REG, value, 0);
+}
+
 #endif /* __ASM_ARCH_DMTIMER_H */
