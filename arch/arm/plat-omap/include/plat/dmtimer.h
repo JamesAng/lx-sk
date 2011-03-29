@@ -219,6 +219,7 @@ struct omap_dm_timer {
 	unsigned posted:1;
 };
 
+extern u32 sys_timer_reserved;
 void __omap_dm_timer_reset(struct omap_dm_timer *timer, int autoidle,
 				int wakeup);
 void omap_dm_timer_prepare(struct omap_dm_timer *timer);

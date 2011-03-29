@@ -69,6 +69,8 @@
 /* MAX_GPTIMER_ID: number of GPTIMERs on the chip */
 #define MAX_GPTIMER_ID		12
 
+u32 sys_timer_reserved;
+
 /* Clockevent code */
 
 static struct omap_dm_timer clkev;
@@ -189,6 +191,8 @@ static int __init omap_dm_timer_init_one(struct omap_dm_timer *timer,
 	}
 
 	omap_hwmod_enable(oh);
+
+	sys_timer_reserved |= (1 << (gptimer_id - 1));
 
 	if (gptimer_id != 12) {
 		struct clk *src;
@@ -315,7 +319,6 @@ static void __init omap2_gp_clocksource_init(void)
 #ifdef CONFIG_ARCH_OMAP2
 static void __init omap242x_timer_init(void)
 {
-	omap_dm_timer_init();
 	omap2_gp_clockevent_init(1, OMAP2_CLKEV_SOURCE);
 	omap2_gp_clocksource_init();
 }
@@ -326,7 +329,6 @@ struct sys_timer omap242x_timer = {
 
 static void __init omap243x_timer_init(void)
 {
-	omap_dm_timer_init();
 	omap2_gp_clockevent_init(1, OMAP2_CLKEV_SOURCE);
 	omap2_gp_clocksource_init();
 }
@@ -339,7 +341,6 @@ struct sys_timer omap243x_timer = {
 #ifdef CONFIG_ARCH_OMAP3
 static void __init omap3_timer_init(void)
 {
-	omap_dm_timer_init();
 	omap2_gp_clockevent_init(1, OMAP3_CLKEV_SOURCE);
 	omap2_gp_clocksource_init();
 }
@@ -354,7 +355,6 @@ struct sys_timer omap3_timer = {
  */
 static void __init omap3_beagle_timer_init(void)
 {
-	omap_dm_timer_init();
 	omap2_gp_clockevent_init(OMAP3_BEAGLE_TIMER, OMAP3_CLKEV_SOURCE);
 	omap2_gp_clocksource_init();
 }
@@ -371,7 +371,6 @@ static void __init omap4_timer_init(void)
 	twd_base = ioremap(OMAP44XX_LOCAL_TWD_BASE, SZ_256);
 	BUG_ON(!twd_base);
 #endif
-	omap_dm_timer_init();
 	omap2_gp_clockevent_init(1, OMAP4_CLKEV_SOURCE);
 	omap2_gp_clocksource_init();
 }
