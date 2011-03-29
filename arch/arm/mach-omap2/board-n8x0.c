@@ -705,7 +705,7 @@ MACHINE_START(NOKIA_N800, "Nokia N800")
 	.reserve	= omap_reserve,
 	.map_io		= n8x0_map_io,
 	.init_early	= n8x0_init_early,
-	.init_irq	= omap_init_irq,
+	.init_irq	= omap2_init_irq,
 	.init_machine	= n8x0_init_machine,
 	.timer		= &omap_timer,
 MACHINE_END
@@ -715,7 +715,7 @@ MACHINE_START(NOKIA_N810, "Nokia N810")
 	.reserve	= omap_reserve,
 	.map_io		= n8x0_map_io,
 	.init_early	= n8x0_init_early,
-	.init_irq	= omap_init_irq,
+	.init_irq	= omap2_init_irq,
 	.init_machine	= n8x0_init_machine,
 	.timer		= &omap_timer,
 MACHINE_END
@@ -725,7 +725,7 @@ MACHINE_START(NOKIA_N810_WIMAX, "Nokia N810 WiMAX")
 	.reserve	= omap_reserve,
 	.map_io		= n8x0_map_io,
 	.init_early	= n8x0_init_early,
-	.init_irq	= omap_init_irq,
+	.init_irq	= omap2_init_irq,
 	.init_machine	= n8x0_init_machine,
 	.timer		= &omap_timer,
 MACHINE_END

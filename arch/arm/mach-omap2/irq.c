@@ -103,28 +103,36 @@ static void omap_ack_irq(struct irq_data *d)
 	intc_bank_write_reg(0x1, &irq_banks[0], INTC_CONTROL);
 }
 
+static inline void _omap_mask_irq(int irq)
+{
+	int offset = irq & (~(IRQ_BITS_PER_REG - 1));
+	irq &= (IRQ_BITS_PER_REG - 1);
+	intc_bank_write_reg(1 << irq, &irq_banks[0], INTC_MIR_SET0 + offset);
+}
+
 static void omap_mask_irq(struct irq_data *d)
 {
 	unsigned int irq = d->irq;
-	int offset = irq & (~(IRQ_BITS_PER_REG - 1));
 
-	if (cpu_is_omap34xx() && !cpu_is_ti816x()) {
-		int spurious = 0;
+	_omap_mask_irq(irq);
+}
 
-		/*
-		 * INT_34XX_GPT12_IRQ is also the spurious irq. Maybe because
-		 * it is the highest irq number?
-		 */
-		if (irq == INT_34XX_GPT12_IRQ)
-			spurious = omap_check_spurious(irq);
+static void omap3_mask_irq(struct irq_data *d)
+{
+	unsigned int irq = d->irq;
+	int spurious = 0;
 
-		if (!spurious)
-			previous_irq = irq;
-	}
+	/*
+	 * INT_34XX_GPT12_IRQ is also the spurious irq. Maybe because
+	 * it is the highest irq number?
+	 */
+	if (irq == INT_34XX_GPT12_IRQ)
+		spurious = omap_check_spurious(irq);
 
-	irq &= (IRQ_BITS_PER_REG - 1);
+	if (!spurious)
+		previous_irq = irq;
 
-	intc_bank_write_reg(1 << irq, &irq_banks[0], INTC_MIR_SET0 + offset);
+	_omap_mask_irq(irq);
 }
 
 static void omap_unmask_irq(struct irq_data *d)
@@ -140,6 +148,12 @@ static void omap_unmask_irq(struct irq_data *d)
 static void omap_mask_ack_irq(struct irq_data *d)
 {
 	omap_mask_irq(d);
+	omap_ack_irq(d);
+}
+
+static void omap3_mask_ack_irq(struct irq_data *d)
+{
+	omap3_mask_irq(d);
 	omap_ack_irq(d);
 }
 
@@ -186,25 +200,16 @@ int omap_irq_pending(void)
 	return 0;
 }
 
-void __init omap_init_irq(void)
+static inline void omap_init_irq(u32 base, int nr_irqs)
 {
 	unsigned long nr_of_irqs = 0;
 	unsigned int nr_banks = 0;
 	int i;
 
 	for (i = 0; i < ARRAY_SIZE(irq_banks); i++) {
-		unsigned long base = 0;
 		struct omap_irq_bank *bank = irq_banks + i;
 
-		if (cpu_is_omap24xx())
-			base = OMAP24XX_IC_BASE;
-		else if (cpu_is_omap34xx())
-			base = OMAP34XX_IC_BASE;
-
-		BUG_ON(!base);
-
-		if (cpu_is_ti816x())
-			bank->nr_irqs = 128;
+		bank->nr_irqs = nr_irqs;
 
 		/* Static mapping, never released */
 		bank->base_reg = ioremap(base, SZ_4K);
@@ -226,6 +231,35 @@ void __init omap_init_irq(void)
 		irq_set_chip_and_handler(i, &omap_irq_chip, handle_level_irq);
 		set_irq_flags(i, IRQF_VALID);
 	}
+}
+
+void __init omap2_init_irq(void)
+{
+	omap_irq_base = ioremap(OMAP24XX_IC_BASE, SZ_4K);
+	if (WARN_ON(!omap_irq_base))
+		return;
+
+	omap_init_irq(OMAP24XX_IC_BASE, 96);
+}
+
+void __init omap3_init_irq(void)
+{
+	omap_irq_base = ioremap(OMAP34XX_IC_BASE, SZ_4K);
+	if (WARN_ON(!omap_irq_base))
+		return;
+
+	omap_irq_chip.irq_ack = omap3_mask_ack_irq;
+	omap_irq_chip.irq_mask = omap3_mask_irq;
+	omap_init_irq(OMAP34XX_IC_BASE, 96);
+}
+
+void __init ti816x_init_irq(void)
+{
+	omap_irq_base = ioremap(OMAP34XX_IC_BASE, SZ_4K);
+	if (WARN_ON(!omap_irq_base))
+		return;
+
+	omap_init_irq(OMAP34XX_IC_BASE, 128);
 }
 
 #ifdef CONFIG_ARCH_OMAP3
