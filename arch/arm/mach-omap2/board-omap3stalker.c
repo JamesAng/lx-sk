@@ -53,7 +53,6 @@
 #include "sdram-micron-mt46h32m32lf-6.h"
 #include "mux.h"
 #include "hsmmc.h"
-#include "timer-gp.h"
 
 #if defined(CONFIG_SMSC911X) || defined(CONFIG_SMSC911X_MODULE)
 #define OMAP3STALKER_ETHR_START	0x2c000000
@@ -588,9 +587,6 @@ static void __init omap3_stalker_init_early(void)
 static void __init omap3_stalker_init_irq(void)
 {
 	omap3_init_irq();
-#ifdef CONFIG_OMAP_32K_TIMER
-	omap2_gp_clockevent_set_gptimer(12);
-#endif
 }
 
 static struct platform_device *omap3_stalker_devices[] __initdata = {

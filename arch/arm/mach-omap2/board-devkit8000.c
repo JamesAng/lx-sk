@@ -59,7 +59,6 @@
 
 #include "mux.h"
 #include "hsmmc.h"
-#include "timer-gp.h"
 
 #define NAND_BLOCK_SIZE		SZ_128K
 
@@ -458,9 +457,6 @@ static void __init devkit8000_init_early(void)
 static void __init devkit8000_init_irq(void)
 {
 	omap3_init_irq();
-#ifdef CONFIG_OMAP_32K_TIMER
-	omap2_gp_clockevent_set_gptimer(12);
-#endif
 }
 
 static void __init devkit8000_ads7846_init(void)
