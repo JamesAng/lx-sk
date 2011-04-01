@@ -10,21 +10,13 @@
  */
 
 /dts-v1/;
+/include/ "skeleton.dtsi"
 
 / {
 	model = "Freescale i.MX51 Babbage";
-	compatible = "fsl,mx51-babbage";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	aliases {
-	};
+	compatible = "fsl,mx51-babbage", "fsl,mx51";
 
 	memory {
-		device_type = "memory";
 		reg = <0x90000000 0x20000000>;
-	};
-
-	chosen {
 	};
 };

@@ -10,21 +10,13 @@
  */
 
 /dts-v1/;
+/include/ "skeleton.dtsi"
 
 / {
 	model = "Genesi Efika Smartbook";
-	compatible = "genesi,efikasb";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	aliases {
-	};
+	compatible = "genesi,efikasb", "fsl,mx51";
 
 	memory {
-		device_type = "memory";
 		reg = <0x90000000 0x20000000>;
-	};
-
-	chosen {
 	};
 };

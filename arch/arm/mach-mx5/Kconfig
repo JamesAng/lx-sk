@@ -38,7 +38,6 @@ comment "MX5 platforms:"
 config MACH_MX51_BABBAGE
 	bool "Support MX51 BABBAGE platforms"
 	select SOC_IMX51
-	select MX5_DT_COMMON
 	select IMX_HAVE_PLATFORM_IMX2_WDT
 	select IMX_HAVE_PLATFORM_IMX_I2C
 	select IMX_HAVE_PLATFORM_IMX_UART
@@ -115,15 +114,9 @@ config MACH_EUKREA_MBIMXSD51_BASEBOARD
 
 endchoice
 
-config MX5_DT_COMMON
-	bool
-	select USE_OF
-	select PROC_DEVICETREE
-
 config MX51_EFIKA_COMMON
 	bool
 	select SOC_IMX51
-	select MX5_DT_COMMON
 	select IMX_HAVE_PLATFORM_IMX_UART
 	select IMX_HAVE_PLATFORM_SDHCI_ESDHC_IMX
 	select IMX_HAVE_PLATFORM_SPI_IMX
@@ -168,7 +161,6 @@ config MACH_MX53_SMD
 config MACH_MX53_LOCO
 	bool "Support MX53 LOCO platforms"
 	select SOC_IMX53
-	select MX5_DT_COMMON
 	select IMX_HAVE_PLATFORM_IMX2_WDT
 	select IMX_HAVE_PLATFORM_IMX_I2C
 	select IMX_HAVE_PLATFORM_IMX_UART
