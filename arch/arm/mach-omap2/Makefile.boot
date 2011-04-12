@@ -7,3 +7,4 @@ dtb-$(CONFIG_MACH_OMAP4_PANDA) += omap4-panda.dtb
 dtb-$(CONFIG_MACH_OVERO) += omap3-overo.dtb
 dtb-$(CONFIG_MACH_IGEP0020) += isee-igep-v2.dtb
 dtb-$(CONFIG_MACH_IGEP0030) += isee-igep-v3.dtb
+dtb-$(CONFIG_MACH_OMAP_ZOOM3) += zoom3.dtb

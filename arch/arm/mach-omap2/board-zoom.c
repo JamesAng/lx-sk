@@ -132,6 +132,11 @@ static void __init omap_zoom_init(void)
 	zoom_display_init();
 }
 
+static const char *zoom3_dt_match[] __initdata = {
+	"ti,zoom3",
+	NULL
+};
+
 MACHINE_START(OMAP_ZOOM2, "OMAP Zoom2 board")
 	.boot_params	= 0x80000100,
 	.reserve	= omap_reserve,
@@ -150,4 +155,5 @@ MACHINE_START(OMAP_ZOOM3, "OMAP Zoom3 board")
 	.init_irq	= omap_init_irq,
 	.init_machine	= omap_zoom_init,
 	.timer		= &omap_timer,
+	.dt_compat	= zoom3_dt_match,
 MACHINE_END

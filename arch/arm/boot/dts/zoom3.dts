@@ -1,0 +1,11 @@
+/dts-v1/;
+/include/ "skeleton.dtsi"
+
+/ {
+	model = "Zoom3";
+	compatible = "ti,zoom3";
+
+	memory {
+		reg = <0x80000000 0x20000000>;
+	};
+};
