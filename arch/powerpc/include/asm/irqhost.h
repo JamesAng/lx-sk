@@ -8,6 +8,7 @@
 
 struct irq_host {
 	struct list_head	link;
+	struct of_irq_domain	domain;
 
 	/* type of reverse mapping technique */
 	unsigned int		revmap_type;
@@ -21,9 +22,6 @@ struct irq_host {
 	struct irq_host_ops	*ops;
 	void			*host_data;
 	irq_hw_number_t		inval_irq;
-
-	/* Optional device node pointer */
-	struct device_node	*of_node;
 };
 
 #endif /* _ASM_POWERPC_IRQHOST_H */

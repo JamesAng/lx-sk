@@ -21,7 +21,6 @@
 #include <asm/irq.h>
 #include <asm/atomic.h>
 #include <asm/setup.h>
-#include <asm/irq_controller.h>
 
 #ifdef CONFIG_OF
 extern int of_ioapic;
