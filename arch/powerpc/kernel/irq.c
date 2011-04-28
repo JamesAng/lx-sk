@@ -984,53 +984,29 @@ unsigned int irq_linear_revmap(struct irq_host *host,
 static unsigned int irq_alloc_virt(struct irq_host *host, unsigned int hint)
 {
 	unsigned long flags;
-	unsigned int i, j, found = NO_IRQ;
-	int res;
+	int found;
 
-	raw_spin_lock_irqsave(&irq_big_lock, flags);
-
-	/* Use hint for 1 interrupt if any */
-	if (hint >= NUM_ISA_INTERRUPTS &&
-	    hint < irq_virq_count && irq_map[hint].host == NULL) {
-		found = hint;
-		goto hint_found;
-	}
-
-	/* Look for a free virq in the allocatable (non-legacy) space */
-	for (i = NUM_ISA_INTERRUPTS, j = 0; i < irq_virq_count; i++) {
-		if (irq_map[i].host == NULL) {
-			found = i;
-			break;
-		}
-	}
-	if (found == NO_IRQ) {
-		raw_spin_unlock_irqrestore(&irq_big_lock, flags);
+	/*
+	 * Find an unused interrupt.  First, attempt to allocate
+	 * 'hint'.  If that fails, then just allocate any free one.
+	 */
+	found = irq_alloc_desc_at(hint, 0);
+	if (found <= NO_IRQ)
+		found = irq_alloc_desc(0);
+	if (found <= NO_IRQ) {
+		pr_debug("irq: -> allocating desc failed\n");
 		return NO_IRQ;
 	}
- hint_found:
+
+	raw_spin_lock_irqsave(&irq_big_lock, flags);
 	irq_map[found].hwirq = host->inval_irq;
 	smp_wmb();
 	irq_map[found].host = host;
 	raw_spin_unlock_irqrestore(&irq_big_lock, flags);
 
-	res = irq_alloc_desc_at(found, 0);
-	if (res != found) {
-		pr_debug("irq: -> allocating desc failed\n");
-		goto error_desc;
-	}
-
 	irq_clear_status_flags(found, IRQ_NOREQUEST);
 
 	return found;
-
- error_desc:
-	raw_spin_lock_irqsave(&irq_big_lock, flags);
-	host = irq_map[found].host;
-	irq_map[found].hwirq = host->inval_irq;
-	smp_wmb();
-	irq_map[found].host = NULL;
-	raw_spin_unlock_irqrestore(&irq_big_lock, flags);
-	return NO_IRQ;
 }
 
 /**
@@ -1051,13 +1027,14 @@ static void irq_free_virt(unsigned int virq)
 		return;
 	}
 
-	irq_free_descs(virq, 1);
 	raw_spin_lock_irqsave(&irq_big_lock, flags);
 	host = irq_map[virq].host;
 	irq_map[virq].hwirq = host->inval_irq;
 	smp_wmb();
 	irq_map[virq].host = NULL;
 	raw_spin_unlock_irqrestore(&irq_big_lock, flags);
+
+	irq_free_descs(virq, 1);
 }
 
 int arch_early_irq_init(void)
