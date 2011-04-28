@@ -647,6 +647,9 @@ void irq_set_virq_count(unsigned int count)
 		irq_virq_count = count;
 }
 
+static unsigned int irq_alloc_virt(struct irq_host *host, unsigned int hint);
+static void irq_free_virt(unsigned int virq);
+
 static int irq_setup_virq(struct irq_host *host, unsigned int virq,
 			    irq_hw_number_t hwirq)
 {
@@ -675,7 +678,7 @@ static int irq_setup_virq(struct irq_host *host, unsigned int virq,
 errdesc:
 	irq_free_descs(virq, 1);
 error:
-	irq_free_virt(virq, 1);
+	irq_free_virt(virq);
 	return -1;
 }
 
@@ -689,7 +692,7 @@ unsigned int irq_create_direct_mapping(struct irq_host *host)
 	BUG_ON(host == NULL);
 	WARN_ON(host->revmap_type != IRQ_HOST_MAP_NOMAP);
 
-	virq = irq_alloc_virt(host, 1, 0);
+	virq = irq_alloc_virt(host, 0);
 	if (virq == NO_IRQ) {
 		pr_debug("irq: create_direct virq allocation failed\n");
 		return NO_IRQ;
@@ -742,7 +745,7 @@ unsigned int irq_create_mapping(struct irq_host *host,
 	} else {
 		/* Allocate a virtual interrupt number */
 		hint = hwirq % irq_virq_count;
-		virq = irq_alloc_virt(host, 1, hint);
+		virq = irq_alloc_virt(host, hint);
 		if (virq == NO_IRQ) {
 			pr_debug("irq: -> virq allocation failed\n");
 			return NO_IRQ;
@@ -856,7 +859,7 @@ void irq_dispose_mapping(unsigned int virq)
 
 	irq_free_descs(virq, 1);
 	/* Free it */
-	irq_free_virt(virq, 1);
+	irq_free_virt(virq);
 }
 EXPORT_SYMBOL_GPL(irq_dispose_mapping);
 
@@ -974,36 +977,31 @@ unsigned int irq_linear_revmap(struct irq_host *host,
 	return revmap[hwirq];
 }
 
-unsigned int irq_alloc_virt(struct irq_host *host,
-			    unsigned int count,
-			    unsigned int hint)
+/**
+ * irq_alloc_virt() - Allocate virtual irq numbers
+ * @host: host owning these new virtual irqs
+ * @hint: pass a hint number, the allocator will try to use a 1:1 mapping
+ *
+ * This is a low level function that is used internally by irq_create_mapping()
+ */
+static unsigned int irq_alloc_virt(struct irq_host *host, unsigned int hint)
 {
 	unsigned long flags;
 	unsigned int i, j, found = NO_IRQ;
 
-	if (count == 0 || count > (irq_virq_count - NUM_ISA_INTERRUPTS))
-		return NO_IRQ;
-
 	raw_spin_lock_irqsave(&irq_big_lock, flags);
 
 	/* Use hint for 1 interrupt if any */
-	if (count == 1 && hint >= NUM_ISA_INTERRUPTS &&
+	if (hint >= NUM_ISA_INTERRUPTS &&
 	    hint < irq_virq_count && irq_map[hint].host == NULL) {
 		found = hint;
 		goto hint_found;
 	}
 
-	/* Look for count consecutive numbers in the allocatable
-	 * (non-legacy) space
-	 */
+	/* Look for a free virq in the allocatable (non-legacy) space */
 	for (i = NUM_ISA_INTERRUPTS, j = 0; i < irq_virq_count; i++) {
-		if (irq_map[i].host != NULL)
-			j = 0;
-		else
-			j++;
-
-		if (j == count) {
-			found = i - count + 1;
+		if (irq_map[i].host == NULL) {
+			found = i;
 			break;
 		}
 	}
@@ -1012,36 +1010,36 @@ unsigned int irq_alloc_virt(struct irq_host *host,
 		return NO_IRQ;
 	}
  hint_found:
-	for (i = found; i < (found + count); i++) {
-		irq_map[i].hwirq = host->inval_irq;
-		smp_wmb();
-		irq_map[i].host = host;
-	}
+	irq_map[found].hwirq = host->inval_irq;
+	smp_wmb();
+	irq_map[found].host = host;
 	raw_spin_unlock_irqrestore(&irq_big_lock, flags);
 	return found;
 }
 
-void irq_free_virt(unsigned int virq, unsigned int count)
+/**
+ * irq_free_virt() - Free virtual irq numbers
+ * @virq: virtual irq number of the first interrupt to free
+ *
+ * This function is the opposite of irq_alloc_virt. It will not clear reverse
+ * maps, this should be done previously by unmap'ing the interrupt. In fact,
+ * the interrupts being freed should have been unmapped prior to calling this.
+ */
+static void irq_free_virt(unsigned int virq)
 {
 	unsigned long flags;
-	unsigned int i;
+	struct irq_host *host;
 
-	WARN_ON (virq < NUM_ISA_INTERRUPTS);
-	WARN_ON (count == 0 || (virq + count) > irq_virq_count);
+	if ((virq < NUM_ISA_INTERRUPTS) || (virq >= irq_virq_count)) {
+		WARN_ON(1);
+		return;
+	}
 
 	raw_spin_lock_irqsave(&irq_big_lock, flags);
-	for (i = virq; i < (virq + count); i++) {
-		struct irq_host *host;
-
-		if (i < NUM_ISA_INTERRUPTS ||
-		    (virq + count) > irq_virq_count)
-			continue;
-
-		host = irq_map[i].host;
-		irq_map[i].hwirq = host->inval_irq;
-		smp_wmb();
-		irq_map[i].host = NULL;
-	}
+	host = irq_map[virq].host;
+	irq_map[virq].hwirq = host->inval_irq;
+	smp_wmb();
+	irq_map[virq].host = NULL;
 	raw_spin_unlock_irqrestore(&irq_big_lock, flags);
 }
 
