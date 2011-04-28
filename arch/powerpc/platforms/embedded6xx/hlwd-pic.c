@@ -18,6 +18,7 @@
 #include <linux/init.h>
 #include <linux/irq.h>
 #include <linux/of.h>
+#include <asm/irqhost.h>
 #include <asm/io.h>
 
 #include "hlwd-pic.h"

@@ -24,6 +24,7 @@
 #include <linux/spinlock.h>
 #include <linux/fsl_devices.h>
 #include <asm/irq.h>
+#include <asm/irqhost.h>
 #include <asm/io.h>
 #include <asm/prom.h>
 #include <asm/ipic.h>

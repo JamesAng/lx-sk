@@ -26,6 +26,7 @@
 #include <linux/interrupt.h>
 #include <linux/kernel_stat.h>
 #include <asm/irq.h>
+#include <asm/irqhost.h>
 #include <asm/io.h>
 #include <asm/prom.h>
 #include <asm/dcr.h>

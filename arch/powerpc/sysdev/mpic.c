@@ -28,6 +28,7 @@
 #include <linux/pci.h>
 #include <linux/slab.h>
 
+#include <asm/irqhost.h>
 #include <asm/ptrace.h>
 #include <asm/signal.h>
 #include <asm/io.h>

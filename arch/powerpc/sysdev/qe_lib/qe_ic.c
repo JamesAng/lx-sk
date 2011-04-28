@@ -26,6 +26,7 @@
 #include <linux/device.h>
 #include <linux/bootmem.h>
 #include <linux/spinlock.h>
+#include <asm/irqhost.h>
 #include <asm/irq.h>
 #include <asm/io.h>
 #include <asm/prom.h>

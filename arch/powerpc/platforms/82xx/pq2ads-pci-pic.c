@@ -19,6 +19,7 @@
 #include <linux/bootmem.h>
 #include <linux/slab.h>
 
+#include <asm/irqhost.h>
 #include <asm/io.h>
 #include <asm/prom.h>
 #include <asm/cpm2.h>

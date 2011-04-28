@@ -104,29 +104,11 @@ struct irq_host_ops {
 		     irq_hw_number_t *out_hwirq, unsigned int *out_type);
 };
 
-struct irq_host {
-	struct list_head	link;
-
-	/* type of reverse mapping technique */
-	unsigned int		revmap_type;
+/* Reverse map types; pass into irq_alloc_host revmap_type argument */
 #define IRQ_HOST_MAP_LEGACY     0 /* legacy 8259, gets irqs 1..15 */
 #define IRQ_HOST_MAP_NOMAP	1 /* no fast reverse mapping */
 #define IRQ_HOST_MAP_LINEAR	2 /* linear map of interrupts */
 #define IRQ_HOST_MAP_TREE	3 /* radix tree */
-	union {
-		struct {
-			unsigned int size;
-			unsigned int *revmap;
-		} linear;
-		struct radix_tree_root tree;
-	} revmap_data;
-	struct irq_host_ops	*ops;
-	void			*host_data;
-	irq_hw_number_t		inval_irq;
-
-	/* Optional device node pointer */
-	struct device_node	*of_node;
-};
 
 struct irq_data;
 extern irq_hw_number_t irqd_to_hwirq(struct irq_data *d);

@@ -17,6 +17,7 @@
 #include <linux/debugfs.h>
 #include <linux/slab.h>
 
+#include <asm/irqhost.h>
 #include <asm/dcr.h>
 #include <asm/machdep.h>
 #include <asm/prom.h>

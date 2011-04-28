@@ -56,6 +56,7 @@
 #include <linux/of.h>
 #include <linux/of_irq.h>
 
+#include <asm/irqhost.h>
 #include <asm/uaccess.h>
 #include <asm/system.h>
 #include <asm/io.h>

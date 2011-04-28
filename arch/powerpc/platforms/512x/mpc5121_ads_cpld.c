@@ -18,6 +18,7 @@
 #include <linux/interrupt.h>
 #include <linux/irq.h>
 #include <linux/io.h>
+#include <asm/irqhost.h>
 #include <asm/prom.h>
 
 static struct device_node *cpld_pic_node;

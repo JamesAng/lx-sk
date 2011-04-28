@@ -18,6 +18,7 @@
 #include <linux/irq.h>
 #include <linux/bootmem.h>
 #include <linux/msi.h>
+#include <asm/irqhost.h>
 #include <asm/mpic.h>
 #include <asm/prom.h>
 #include <asm/hw_irq.h>

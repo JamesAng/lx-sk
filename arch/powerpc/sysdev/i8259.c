@@ -13,6 +13,7 @@
 #include <linux/interrupt.h>
 #include <linux/kernel.h>
 #include <linux/delay.h>
+#include <asm/irqhost.h>
 #include <asm/io.h>
 #include <asm/i8259.h>
 #include <asm/prom.h>

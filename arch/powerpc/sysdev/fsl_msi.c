@@ -19,6 +19,7 @@
 #include <linux/slab.h>
 #include <linux/of_platform.h>
 #include <sysdev/fsl_soc.h>
+#include <asm/irqhost.h>
 #include <asm/prom.h>
 #include <asm/hw_irq.h>
 #include <asm/ppc-pci.h>
