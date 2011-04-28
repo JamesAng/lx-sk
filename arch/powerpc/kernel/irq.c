@@ -665,16 +665,6 @@ static void irq_free_virt(unsigned int virq);
 static int irq_setup_virq(struct irq_host *host, unsigned int virq,
 			    irq_hw_number_t hwirq)
 {
-	int res;
-
-	res = irq_alloc_desc_at(virq, 0);
-	if (res != virq) {
-		pr_debug("irq: -> allocating desc failed\n");
-		goto error;
-	}
-
-	irq_clear_status_flags(virq, IRQ_NOREQUEST);
-
 	/* map it */
 	smp_wmb();
 	irq_map[virq].hwirq = hwirq;
@@ -688,8 +678,6 @@ static int irq_setup_virq(struct irq_host *host, unsigned int virq,
 	return 0;
 
 errdesc:
-	irq_free_descs(virq, 1);
-error:
 	irq_free_virt(virq);
 	return -1;
 }
@@ -754,14 +742,14 @@ unsigned int irq_create_mapping(struct irq_host *host,
 		if (virq == 0 || virq >= NUM_ISA_INTERRUPTS)
 			return NO_IRQ;
 		return virq;
-	} else {
-		/* Allocate a virtual interrupt number */
-		hint = hwirq % irq_virq_count;
-		virq = irq_alloc_virt(host, hint);
-		if (virq == NO_IRQ) {
-			pr_debug("irq: -> virq allocation failed\n");
-			return NO_IRQ;
-		}
+	}
+
+	/* Allocate a virtual interrupt number */
+	hint = hwirq % irq_virq_count;
+	virq = irq_alloc_virt(host, hint);
+	if (virq == NO_IRQ) {
+		pr_debug("irq: -> virq allocation failed\n");
+		return NO_IRQ;
 	}
 
 	if (irq_setup_virq(host, virq, hwirq))
@@ -867,7 +855,6 @@ void irq_dispose_mapping(unsigned int virq)
 
 	irq_set_status_flags(virq, IRQ_NOREQUEST);
 
-	irq_free_descs(virq, 1);
 	/* Free it */
 	irq_free_virt(virq);
 }
@@ -998,6 +985,7 @@ static unsigned int irq_alloc_virt(struct irq_host *host, unsigned int hint)
 {
 	unsigned long flags;
 	unsigned int i, j, found = NO_IRQ;
+	int res;
 
 	raw_spin_lock_irqsave(&irq_big_lock, flags);
 
@@ -1024,7 +1012,25 @@ static unsigned int irq_alloc_virt(struct irq_host *host, unsigned int hint)
 	smp_wmb();
 	irq_map[found].host = host;
 	raw_spin_unlock_irqrestore(&irq_big_lock, flags);
+
+	res = irq_alloc_desc_at(found, 0);
+	if (res != found) {
+		pr_debug("irq: -> allocating desc failed\n");
+		goto error_desc;
+	}
+
+	irq_clear_status_flags(found, IRQ_NOREQUEST);
+
 	return found;
+
+ error_desc:
+	raw_spin_lock_irqsave(&irq_big_lock, flags);
+	host = irq_map[found].host;
+	irq_map[found].hwirq = host->inval_irq;
+	smp_wmb();
+	irq_map[found].host = NULL;
+	raw_spin_unlock_irqrestore(&irq_big_lock, flags);
+	return NO_IRQ;
 }
 
 /**
@@ -1045,6 +1051,7 @@ static void irq_free_virt(unsigned int virq)
 		return;
 	}
 
+	irq_free_descs(virq, 1);
 	raw_spin_lock_irqsave(&irq_big_lock, flags);
 	host = irq_map[virq].host;
 	irq_map[virq].hwirq = host->inval_irq;
