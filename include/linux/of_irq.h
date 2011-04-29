@@ -63,6 +63,8 @@ struct of_irq_domain {
 extern void of_irq_domain_add(struct of_irq_domain *domain);
 extern void of_irq_set_default_domain(struct of_irq_domain *host);
 extern struct of_irq_domain *of_irq_domain_find(struct device_node *controller);
+extern void of_irq_domain_add_simple(struct device_node *controller,
+				     int irq_start, int irq_size);
 
 /*
  * Workarounds only applied to 32bit powermac machines

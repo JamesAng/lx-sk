@@ -24,6 +24,7 @@
 #include <linux/of.h>
 #include <linux/of_irq.h>
 #include <linux/string.h>
+#include <linux/slab.h>
 
 /* For archs that don't support NO_IRQ (such as x86), provide a dummy value */
 #ifndef NO_IRQ
@@ -146,6 +147,49 @@ unsigned int irq_create_of_mapping(struct device_node *controller,
 	return domain->map(domain, controller, intspec, intsize);
 }
 EXPORT_SYMBOL_GPL(irq_create_of_mapping);
+
+/*
+ * A simple irq domain implementation that 1:1 translates hwirqs to an offset
+ * from the irq_start value
+ */
+struct of_irq_domain_simple {
+	struct of_irq_domain domain;
+	int irq_start;
+	int irq_size;
+};
+
+static unsigned int of_irq_domain_simple_map(struct of_irq_domain *domain,
+					     struct device_node *controller,
+					     const u32 *intspec, u32 intsize)
+{
+	struct of_irq_domain_simple *ds;
+
+	ds = container_of(domain, struct of_irq_domain_simple, domain);
+	if (intspec[0] >= ds->irq_size)
+		return NO_IRQ;
+	return ds->irq_start + intspec[0];
+}
+
+/**
+ * of_irq_domain_create_simple() - Set up a 'simple' translation range
+ */
+void of_irq_domain_add_simple(struct device_node *controller,
+			      int irq_start, int irq_size)
+{
+	struct of_irq_domain_simple *sd;
+
+	sd = kzalloc(sizeof(*sd), GFP_KERNEL);
+	if (!sd) {
+		WARN_ON(1);
+		return;
+	}
+
+	sd->irq_start = irq_start;
+	sd->irq_size = irq_size;
+	sd->domain.controller = of_node_get(controller);
+	sd->domain.map = of_irq_domain_simple_map;
+	of_irq_domain_add(&sd->domain);
+}
 
 /**
  * irq_of_parse_and_map - Parse and map an interrupt into linux virq space
