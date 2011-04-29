@@ -11,6 +11,7 @@
 #include <linux/irq.h>
 #include <linux/bitmap.h>
 #include <linux/msi.h>
+#include <asm/irqhost.h>
 #include <asm/mpic.h>
 #include <asm/prom.h>
 #include <asm/hw_irq.h>
@@ -84,7 +85,7 @@ int mpic_msi_init_allocator(struct mpic *mpic)
 	int rc;
 
 	rc = msi_bitmap_alloc(&mpic->msi_bitmap, mpic->irq_count,
-			      mpic->irqhost->of_node);
+			      mpic->irqhost->domain.controller);
 	if (rc)
 		return rc;
 

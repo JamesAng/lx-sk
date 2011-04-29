@@ -26,6 +26,7 @@
 #include <linux/device.h>
 #include <linux/bootmem.h>
 #include <linux/spinlock.h>
+#include <asm/irqhost.h>
 #include <asm/irq.h>
 #include <asm/io.h>
 #include <asm/prom.h>
@@ -197,12 +198,10 @@ static inline struct qe_ic *qe_ic_from_irq_data(struct irq_data *d)
 	return irq_data_get_irq_chip_data(d);
 }
 
-#define virq_to_hw(virq)	((unsigned int)irq_map[virq].hwirq)
-
 static void qe_ic_unmask_irq(struct irq_data *d)
 {
 	struct qe_ic *qe_ic = qe_ic_from_irq_data(d);
-	unsigned int src = virq_to_hw(d->irq);
+	unsigned int src = irqd_to_hwirq(d);
 	unsigned long flags;
 	u32 temp;
 
@@ -218,7 +217,7 @@ static void qe_ic_unmask_irq(struct irq_data *d)
 static void qe_ic_mask_irq(struct irq_data *d)
 {
 	struct qe_ic *qe_ic = qe_ic_from_irq_data(d);
-	unsigned int src = virq_to_hw(d->irq);
+	unsigned int src = irqd_to_hwirq(d);
 	unsigned long flags;
 	u32 temp;
 
@@ -251,7 +250,7 @@ static struct irq_chip qe_ic_irq_chip = {
 static int qe_ic_host_match(struct irq_host *h, struct device_node *node)
 {
 	/* Exact match, unless qe_ic node is NULL */
-	return h->of_node == NULL || h->of_node == node;
+	return h->domain.controller == NULL || h->domain.controller == node;
 }
 
 static int qe_ic_host_map(struct irq_host *h, unsigned int virq,

@@ -55,11 +55,18 @@ typedef unsigned long irq_hw_number_t;
  * model). It's the host callbacks that are responsible for setting the
  * irq_chip on a given irq_desc after it's been mapped.
  *
+ * irq_host builds upon the of_irq_domain code in drivers/of/irq.c.
+ * of_irq_domain provides all of the translation hooks for registering irq
+ * controllers. irq_host add mapping infrastructure to and from hardware
+ * irq numbers. IRQ controllers that don't need the mapping infrastructure
+ * can use irq_domain directly.
+ *
  * The host code and data structures are fairly agnostic to the fact that
  * we use an open firmware device-tree. We do have references to struct
- * device_node in two places: in irq_find_host() to find the host matching
- * a given interrupt controller node, and of course as an argument to its
- * counterpart host->ops->match() callback. However, those are treated as
+ * device_node in two places: in of_irq_domain_find() to find the host matching
+ * a given interrupt controller node (which is actually common of_irq_domain
+ * code), and of course as an argument to its counterpart host->ops->match()
+ * and host->domain->match() callbacks. However, those are treated as
  * generic pointers by the core and the fact that it's actually a device-node
  * pointer is purely a convention between callers and implementation. This
  * code could thus be used on other architectures by replacing those two
@@ -104,43 +111,16 @@ struct irq_host_ops {
 		     irq_hw_number_t *out_hwirq, unsigned int *out_type);
 };
 
-struct irq_host {
-	struct list_head	link;
-
-	/* type of reverse mapping technique */
-	unsigned int		revmap_type;
+/* Reverse map types; pass into irq_alloc_host revmap_type argument */
 #define IRQ_HOST_MAP_LEGACY     0 /* legacy 8259, gets irqs 1..15 */
 #define IRQ_HOST_MAP_NOMAP	1 /* no fast reverse mapping */
 #define IRQ_HOST_MAP_LINEAR	2 /* linear map of interrupts */
 #define IRQ_HOST_MAP_TREE	3 /* radix tree */
-	union {
-		struct {
-			unsigned int size;
-			unsigned int *revmap;
-		} linear;
-		struct radix_tree_root tree;
-	} revmap_data;
-	struct irq_host_ops	*ops;
-	void			*host_data;
-	irq_hw_number_t		inval_irq;
 
-	/* Optional device node pointer */
-	struct device_node	*of_node;
-};
-
-/* The main irq map itself is an array of NR_IRQ entries containing the
- * associate host and irq number. An entry with a host of NULL is free.
- * An entry can be allocated if it's free, the allocator always then sets
- * hwirq first to the host's invalid irq number and then fills ops.
- */
-struct irq_map_entry {
-	irq_hw_number_t	hwirq;
-	struct irq_host	*host;
-};
-
-extern struct irq_map_entry irq_map[NR_IRQS];
-
+struct irq_data;
+extern irq_hw_number_t irqd_to_hwirq(struct irq_data *d);
 extern irq_hw_number_t virq_to_hw(unsigned int virq);
+extern struct irq_host *virq_to_host(unsigned int virq);
 
 /**
  * irq_alloc_host - Allocate a new irq_host data structure
@@ -163,14 +143,6 @@ extern struct irq_host *irq_alloc_host(struct device_node *of_node,
 				       unsigned int revmap_arg,
 				       struct irq_host_ops *ops,
 				       irq_hw_number_t inval_irq);
-
-
-/**
- * irq_find_host - Locates a host for a given device node
- * @node: device-tree node of the interrupt controller
- */
-extern struct irq_host *irq_find_host(struct device_node *node);
-
 
 /**
  * irq_set_default_host - Set a "default" host
@@ -272,38 +244,6 @@ extern unsigned int irq_radix_revmap_lookup(struct irq_host *host,
 extern unsigned int irq_linear_revmap(struct irq_host *host,
 				      irq_hw_number_t hwirq);
 
-
-
-/**
- * irq_alloc_virt - Allocate virtual irq numbers
- * @host: host owning these new virtual irqs
- * @count: number of consecutive numbers to allocate
- * @hint: pass a hint number, the allocator will try to use a 1:1 mapping
- *
- * This is a low level function that is used internally by irq_create_mapping()
- * and that can be used by some irq controllers implementations for things
- * like allocating ranges of numbers for MSIs. The revmaps are left untouched.
- */
-extern unsigned int irq_alloc_virt(struct irq_host *host,
-				   unsigned int count,
-				   unsigned int hint);
-
-/**
- * irq_free_virt - Free virtual irq numbers
- * @virq: virtual irq number of the first interrupt to free
- * @count: number of interrupts to free
- *
- * This function is the opposite of irq_alloc_virt. It will not clear reverse
- * maps, this should be done previously by unmap'ing the interrupt. In fact,
- * all interrupts covered by the range being freed should have been unmapped
- * prior to calling this.
- */
-extern void irq_free_virt(unsigned int virq, unsigned int count);
-
-/**
- * irq_early_init - Init irq remapping subsystem
- */
-extern void irq_early_init(void);
 
 static __inline__ int irq_canonicalize(int irq)
 {

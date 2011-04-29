@@ -18,6 +18,7 @@
 #include <linux/init.h>
 #include <linux/irq.h>
 #include <linux/of.h>
+#include <asm/irqhost.h>
 #include <asm/io.h>
 
 #include "hlwd-pic.h"
@@ -43,7 +44,7 @@
 
 static void hlwd_pic_mask_and_ack(struct irq_data *d)
 {
-	int irq = virq_to_hw(d->irq);
+	int irq = irqd_to_hwirq(d);
 	void __iomem *io_base = irq_data_get_irq_chip_data(d);
 	u32 mask = 1 << irq;
 
@@ -53,7 +54,7 @@ static void hlwd_pic_mask_and_ack(struct irq_data *d)
 
 static void hlwd_pic_ack(struct irq_data *d)
 {
-	int irq = virq_to_hw(d->irq);
+	int irq = irqd_to_hwirq(d);
 	void __iomem *io_base = irq_data_get_irq_chip_data(d);
 
 	out_be32(io_base + HW_BROADWAY_ICR, 1 << irq);
@@ -61,7 +62,7 @@ static void hlwd_pic_ack(struct irq_data *d)
 
 static void hlwd_pic_mask(struct irq_data *d)
 {
-	int irq = virq_to_hw(d->irq);
+	int irq = irqd_to_hwirq(d);
 	void __iomem *io_base = irq_data_get_irq_chip_data(d);
 
 	clrbits32(io_base + HW_BROADWAY_IMR, 1 << irq);
@@ -69,7 +70,7 @@ static void hlwd_pic_mask(struct irq_data *d)
 
 static void hlwd_pic_unmask(struct irq_data *d)
 {
-	int irq = virq_to_hw(d->irq);
+	int irq = irqd_to_hwirq(d);
 	void __iomem *io_base = irq_data_get_irq_chip_data(d);
 
 	setbits32(io_base + HW_BROADWAY_IMR, 1 << irq);

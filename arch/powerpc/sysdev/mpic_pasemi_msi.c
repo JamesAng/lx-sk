@@ -18,6 +18,7 @@
 #include <linux/irq.h>
 #include <linux/bootmem.h>
 #include <linux/msi.h>
+#include <asm/irqhost.h>
 #include <asm/mpic.h>
 #include <asm/prom.h>
 #include <asm/hw_irq.h>
@@ -152,8 +153,8 @@ int mpic_pasemi_msi_init(struct mpic *mpic)
 {
 	int rc;
 
-	if (!mpic->irqhost->of_node ||
-	    !of_device_is_compatible(mpic->irqhost->of_node,
+	if (!mpic->irqhost->domain.controller ||
+	    !of_device_is_compatible(mpic->irqhost->domain.controller,
 				     "pasemi,pwrficient-openpic"))
 		return -ENODEV;
 

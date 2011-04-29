@@ -24,6 +24,7 @@
 #include <linux/irq.h>
 #include <linux/ioport.h>
 
+#include <asm/irqhost.h>
 #include <asm/pgtable.h>
 #include <asm/prom.h>
 #include <asm/io.h>
@@ -70,7 +71,7 @@ static struct spider_pic spider_pics[SPIDER_CHIP_COUNT];
 
 static struct spider_pic *spider_virq_to_pic(unsigned int virq)
 {
-	return irq_map[virq].host->host_data;
+	return virq_to_host(virq)->host_data;
 }
 
 static void __iomem *spider_get_irq_config(struct spider_pic *pic,
@@ -82,7 +83,7 @@ static void __iomem *spider_get_irq_config(struct spider_pic *pic,
 static void spider_unmask_irq(struct irq_data *d)
 {
 	struct spider_pic *pic = spider_virq_to_pic(d->irq);
-	void __iomem *cfg = spider_get_irq_config(pic, irq_map[d->irq].hwirq);
+	void __iomem *cfg = spider_get_irq_config(pic, irqd_to_hwirq(d));
 
 	out_be32(cfg, in_be32(cfg) | 0x30000000u);
 }
@@ -90,7 +91,7 @@ static void spider_unmask_irq(struct irq_data *d)
 static void spider_mask_irq(struct irq_data *d)
 {
 	struct spider_pic *pic = spider_virq_to_pic(d->irq);
-	void __iomem *cfg = spider_get_irq_config(pic, irq_map[d->irq].hwirq);
+	void __iomem *cfg = spider_get_irq_config(pic, irqd_to_hwirq(d));
 
 	out_be32(cfg, in_be32(cfg) & ~0x30000000u);
 }
@@ -98,7 +99,7 @@ static void spider_mask_irq(struct irq_data *d)
 static void spider_ack_irq(struct irq_data *d)
 {
 	struct spider_pic *pic = spider_virq_to_pic(d->irq);
-	unsigned int src = irq_map[d->irq].hwirq;
+	unsigned int src = irqd_to_hwirq(d);
 
 	/* Reset edge detection logic if necessary
 	 */
@@ -117,7 +118,7 @@ static int spider_set_irq_type(struct irq_data *d, unsigned int type)
 {
 	unsigned int sense = type & IRQ_TYPE_SENSE_MASK;
 	struct spider_pic *pic = spider_virq_to_pic(d->irq);
-	unsigned int hw = irq_map[d->irq].hwirq;
+	unsigned int hw = irqd_to_hwirq(d);
 	void __iomem *cfg = spider_get_irq_config(pic, hw);
 	u32 old_mask;
 	u32 ic;
@@ -235,18 +236,20 @@ static unsigned int __init spider_find_cascade_and_node(struct spider_pic *pic)
 	 * tree in case the device-tree is ever fixed
 	 */
 	struct of_irq oirq;
-	if (of_irq_map_one(pic->host->of_node, 0, &oirq) == 0) {
+	if (of_irq_map_one(pic->host->domain.controller, 0, &oirq) == 0) {
 		virq = irq_create_of_mapping(oirq.controller, oirq.specifier,
 					     oirq.size);
 		return virq;
 	}
 
 	/* Now do the horrible hacks */
-	tmp = of_get_property(pic->host->of_node, "#interrupt-cells", NULL);
+	tmp = of_get_property(pic->host->domain.controller,
+				"#interrupt-cells", NULL);
 	if (tmp == NULL)
 		return NO_IRQ;
 	intsize = *tmp;
-	imap = of_get_property(pic->host->of_node, "interrupt-map", &imaplen);
+	imap = of_get_property(pic->host->domain.controller,
+				"interrupt-map", &imaplen);
 	if (imap == NULL || imaplen < (intsize + 1))
 		return NO_IRQ;
 	iic = of_find_node_by_phandle(imap[intsize]);

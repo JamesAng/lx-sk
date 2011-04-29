@@ -210,7 +210,7 @@ static void xics_unmask_irq(struct irq_data *d)
 
 	pr_devel("xics: unmask virq %d\n", d->irq);
 
-	hwirq = (unsigned int)irq_map[d->irq].hwirq;
+	hwirq = (unsigned int)irqd_to_hwirq(d);
 	pr_devel(" -> map to hwirq 0x%x\n", hwirq);
 	if (hwirq == XICS_IPI || hwirq == XICS_IRQ_SPURIOUS)
 		return;
@@ -280,7 +280,7 @@ static void xics_mask_irq(struct irq_data *d)
 
 	pr_devel("xics: mask virq %d\n", d->irq);
 
-	hwirq = (unsigned int)irq_map[d->irq].hwirq;
+	hwirq = (unsigned int)irqd_to_hwirq(d);
 	if (hwirq == XICS_IPI || hwirq == XICS_IRQ_SPURIOUS)
 		return;
 	xics_mask_real_irq(hwirq);
@@ -373,7 +373,7 @@ static unsigned char pop_cppr(void)
 
 static void xics_eoi_direct(struct irq_data *d)
 {
-	unsigned int hwirq = (unsigned int)irq_map[d->irq].hwirq;
+	unsigned int hwirq = (unsigned int)irqd_to_hwirq(d);
 
 	iosync();
 	direct_xirr_info_set((pop_cppr() << 24) | hwirq);
@@ -381,7 +381,7 @@ static void xics_eoi_direct(struct irq_data *d)
 
 static void xics_eoi_lpar(struct irq_data *d)
 {
-	unsigned int hwirq = (unsigned int)irq_map[d->irq].hwirq;
+	unsigned int hwirq = (unsigned int)irqd_to_hwirq(d);
 
 	iosync();
 	lpar_xirr_info_set((pop_cppr() << 24) | hwirq);
@@ -395,7 +395,7 @@ xics_set_affinity(struct irq_data *d, const struct cpumask *cpumask, bool force)
 	int xics_status[2];
 	int irq_server;
 
-	hwirq = (unsigned int)irq_map[d->irq].hwirq;
+	hwirq = (unsigned int)irqd_to_hwirq(d);
 	if (hwirq == XICS_IPI || hwirq == XICS_IRQ_SPURIOUS)
 		return -1;
 
@@ -900,9 +900,9 @@ void xics_migrate_irqs_away(void)
 		/* We can't set affinity on ISA interrupts */
 		if (virq < NUM_ISA_INTERRUPTS)
 			continue;
-		if (irq_map[virq].host != xics_host)
+		if (virq_to_host(virq) != xics_host)
 			continue;
-		hwirq = (unsigned int)irq_map[virq].hwirq;
+		hwirq = (unsigned int)virq_to_hw(virq);
 		/* We need to get IPIs still. */
 		if (hwirq == XICS_IPI || hwirq == XICS_IRQ_SPURIOUS)
 			continue;

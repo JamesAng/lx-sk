@@ -13,6 +13,7 @@
 #include <linux/interrupt.h>
 #include <linux/kernel.h>
 #include <linux/delay.h>
+#include <asm/irqhost.h>
 #include <asm/io.h>
 #include <asm/i8259.h>
 #include <asm/prom.h>
@@ -165,7 +166,7 @@ static struct resource pic_edgectrl_iores = {
 
 static int i8259_host_match(struct irq_host *h, struct device_node *node)
 {
-	return h->of_node == NULL || h->of_node == node;
+	return h->domain.controller == NULL || h->domain.controller == node;
 }
 
 static int i8259_host_map(struct irq_host *h, unsigned int virq,

@@ -15,63 +15,13 @@
 #include <linux/of_pci.h>
 
 #include <asm/hpet.h>
-#include <asm/irq_controller.h>
 #include <asm/apic.h>
 #include <asm/pci_x86.h>
 
 __initdata u64 initial_dtb;
 char __initdata cmd_line[COMMAND_LINE_SIZE];
-static LIST_HEAD(irq_domains);
-static DEFINE_RAW_SPINLOCK(big_irq_lock);
 
 int __initdata of_ioapic;
-
-#ifdef CONFIG_X86_IO_APIC
-static void add_interrupt_host(struct irq_domain *ih)
-{
-	unsigned long flags;
-
-	raw_spin_lock_irqsave(&big_irq_lock, flags);
-	list_add(&ih->l, &irq_domains);
-	raw_spin_unlock_irqrestore(&big_irq_lock, flags);
-}
-#endif
-
-static struct irq_domain *get_ih_from_node(struct device_node *controller)
-{
-	struct irq_domain *ih, *found = NULL;
-	unsigned long flags;
-
-	raw_spin_lock_irqsave(&big_irq_lock, flags);
-	list_for_each_entry(ih, &irq_domains, l) {
-		if (ih->controller ==  controller) {
-			found = ih;
-			break;
-		}
-	}
-	raw_spin_unlock_irqrestore(&big_irq_lock, flags);
-	return found;
-}
-
-unsigned int irq_create_of_mapping(struct device_node *controller,
-				   const u32 *intspec, unsigned int intsize)
-{
-	struct irq_domain *ih;
-	u32 virq, type;
-	int ret;
-
-	ih = get_ih_from_node(controller);
-	if (!ih)
-		return 0;
-	ret = ih->xlate(ih, intspec, intsize, &virq, &type);
-	if (ret)
-		return 0;
-	if (type == IRQ_TYPE_NONE)
-		return virq;
-	irq_set_irq_type(virq, type);
-	return virq;
-}
-EXPORT_SYMBOL_GPL(irq_create_of_mapping);
 
 unsigned long pci_address_to_pio(phys_addr_t address)
 {
@@ -366,32 +316,33 @@ static struct of_ioapic_type of_ioapic_type[] =
 	},
 };
 
-static int ioapic_xlate(struct irq_domain *id, const u32 *intspec, u32 intsize,
-			u32 *out_hwirq, u32 *out_type)
+static unsigned int ioapic_of_irq_map(struct of_irq_domain *id,
+				      struct device_node *np,
+				      const u32 *intspec, u32 intsize)
 {
 	struct io_apic_irq_attr attr;
 	struct of_ioapic_type *it;
-	u32 line, idx, type;
+	u32 line, idx, type, hwirq;
 
 	if (intsize < 2)
-		return -EINVAL;
+		return 0;
 
 	line = *intspec;
 	idx = (u32) id->priv;
-	*out_hwirq = line + mp_gsi_routing[idx].gsi_base;
+	hwirq = line + mp_gsi_routing[idx].gsi_base;
 
 	intspec++;
 	type = *intspec;
 
 	if (type >= ARRAY_SIZE(of_ioapic_type))
-		return -EINVAL;
+		return 0;
 
 	it = of_ioapic_type + type;
-	*out_type = it->out_type;
-
 	set_io_apic_irq_attr(&attr, idx, line, it->trigger, it->polarity);
 
-	return io_apic_setup_irq_pin(*out_hwirq, cpu_to_node(0), &attr);
+	if (io_apic_setup_irq_pin(hwirq, cpu_to_node(0), &attr))
+		return 0;
+	return hwirq;
 }
 
 static void __init ioapic_add_ofnode(struct device_node *np)
@@ -408,14 +359,14 @@ static void __init ioapic_add_ofnode(struct device_node *np)
 
 	for (i = 0; i < nr_ioapics; i++) {
 		if (r.start == mp_ioapics[i].apicaddr) {
-			struct irq_domain *id;
+			struct of_irq_domain *id;
 
 			id = kzalloc(sizeof(*id), GFP_KERNEL);
 			BUG_ON(!id);
-			id->controller = np;
-			id->xlate = ioapic_xlate;
+			id->controller = of_node_get(np);
+			id->map = ioapic_of_irq_map;
 			id->priv = (void *)i;
-			add_interrupt_host(id);
+			of_irq_domain_add(id);
 			return;
 		}
 	}

@@ -28,6 +28,7 @@
 #include <linux/pci.h>
 #include <linux/slab.h>
 
+#include <asm/irqhost.h>
 #include <asm/ptrace.h>
 #include <asm/signal.h>
 #include <asm/io.h>
@@ -607,8 +608,6 @@ static int irq_choose_cpu(const struct cpumask *mask)
 }
 #endif
 
-#define mpic_irq_to_hw(virq)	((unsigned int)irq_map[virq].hwirq)
-
 /* Find an mpic associated with a given linux interrupt */
 static struct mpic *mpic_find(unsigned int irq)
 {
@@ -621,7 +620,7 @@ static struct mpic *mpic_find(unsigned int irq)
 /* Determine if the linux irq is an IPI */
 static unsigned int mpic_is_ipi(struct mpic *mpic, unsigned int irq)
 {
-	unsigned int src = mpic_irq_to_hw(irq);
+	unsigned int src = virq_to_hw(irq);
 
 	return (src >= mpic->ipi_vecs[0] && src <= mpic->ipi_vecs[3]);
 }
@@ -674,7 +673,7 @@ void mpic_unmask_irq(struct irq_data *d)
 {
 	unsigned int loops = 100000;
 	struct mpic *mpic = mpic_from_irq_data(d);
-	unsigned int src = mpic_irq_to_hw(d->irq);
+	unsigned int src = irqd_to_hwirq(d);
 
 	DBG("%p: %s: enable_irq: %d (src %d)\n", mpic, mpic->name, d->irq, src);
 
@@ -695,7 +694,7 @@ void mpic_mask_irq(struct irq_data *d)
 {
 	unsigned int loops = 100000;
 	struct mpic *mpic = mpic_from_irq_data(d);
-	unsigned int src = mpic_irq_to_hw(d->irq);
+	unsigned int src = irqd_to_hwirq(d);
 
 	DBG("%s: disable_irq: %d (src %d)\n", mpic->name, d->irq, src);
 
@@ -733,7 +732,7 @@ void mpic_end_irq(struct irq_data *d)
 static void mpic_unmask_ht_irq(struct irq_data *d)
 {
 	struct mpic *mpic = mpic_from_irq_data(d);
-	unsigned int src = mpic_irq_to_hw(d->irq);
+	unsigned int src = irqd_to_hwirq(d);
 
 	mpic_unmask_irq(d);
 
@@ -744,7 +743,7 @@ static void mpic_unmask_ht_irq(struct irq_data *d)
 static unsigned int mpic_startup_ht_irq(struct irq_data *d)
 {
 	struct mpic *mpic = mpic_from_irq_data(d);
-	unsigned int src = mpic_irq_to_hw(d->irq);
+	unsigned int src = irqd_to_hwirq(d);
 
 	mpic_unmask_irq(d);
 	mpic_startup_ht_interrupt(mpic, src, irqd_is_level_type(d));
@@ -755,7 +754,7 @@ static unsigned int mpic_startup_ht_irq(struct irq_data *d)
 static void mpic_shutdown_ht_irq(struct irq_data *d)
 {
 	struct mpic *mpic = mpic_from_irq_data(d);
-	unsigned int src = mpic_irq_to_hw(d->irq);
+	unsigned int src = irqd_to_hwirq(d);
 
 	mpic_shutdown_ht_interrupt(mpic, src);
 	mpic_mask_irq(d);
@@ -764,7 +763,7 @@ static void mpic_shutdown_ht_irq(struct irq_data *d)
 static void mpic_end_ht_irq(struct irq_data *d)
 {
 	struct mpic *mpic = mpic_from_irq_data(d);
-	unsigned int src = mpic_irq_to_hw(d->irq);
+	unsigned int src = irqd_to_hwirq(d);
 
 #ifdef DEBUG_IRQ
 	DBG("%s: end_irq: %d\n", mpic->name, d->irq);
@@ -785,7 +784,7 @@ static void mpic_end_ht_irq(struct irq_data *d)
 static void mpic_unmask_ipi(struct irq_data *d)
 {
 	struct mpic *mpic = mpic_from_ipi(d);
-	unsigned int src = mpic_irq_to_hw(d->irq) - mpic->ipi_vecs[0];
+	unsigned int src = virq_to_hw(d->irq) - mpic->ipi_vecs[0];
 
 	DBG("%s: enable_ipi: %d (ipi %d)\n", mpic->name, d->irq, src);
 	mpic_ipi_write(src, mpic_ipi_read(src) & ~MPIC_VECPRI_MASK);
@@ -816,7 +815,7 @@ int mpic_set_affinity(struct irq_data *d, const struct cpumask *cpumask,
 		      bool force)
 {
 	struct mpic *mpic = mpic_from_irq_data(d);
-	unsigned int src = mpic_irq_to_hw(d->irq);
+	unsigned int src = irqd_to_hwirq(d);
 
 	if (mpic->flags & MPIC_SINGLE_DEST_CPU) {
 		int cpuid = irq_choose_cpu(cpumask);
@@ -862,7 +861,7 @@ static unsigned int mpic_type_to_vecpri(struct mpic *mpic, unsigned int type)
 int mpic_set_irq_type(struct irq_data *d, unsigned int flow_type)
 {
 	struct mpic *mpic = mpic_from_irq_data(d);
-	unsigned int src = mpic_irq_to_hw(d->irq);
+	unsigned int src = irqd_to_hwirq(d);
 	unsigned int vecpri, vold, vnew;
 
 	DBG("mpic: set_irq_type(mpic:@%p,virq:%d,src:0x%x,type:0x%x)\n",
@@ -898,7 +897,7 @@ int mpic_set_irq_type(struct irq_data *d, unsigned int flow_type)
 void mpic_set_vector(unsigned int virq, unsigned int vector)
 {
 	struct mpic *mpic = mpic_from_irq(virq);
-	unsigned int src = mpic_irq_to_hw(virq);
+	unsigned int src = virq_to_hw(virq);
 	unsigned int vecpri;
 
 	DBG("mpic: set_vector(mpic:@%p,virq:%d,src:%d,vector:0x%x)\n",
@@ -916,7 +915,7 @@ void mpic_set_vector(unsigned int virq, unsigned int vector)
 void mpic_set_destination(unsigned int virq, unsigned int cpuid)
 {
 	struct mpic *mpic = mpic_from_irq(virq);
-	unsigned int src = mpic_irq_to_hw(virq);
+	unsigned int src = virq_to_hw(virq);
 
 	DBG("mpic: set_destination(mpic:@%p,virq:%d,src:%d,cpuid:0x%x)\n",
 	    mpic, virq, src, cpuid);
@@ -957,7 +956,7 @@ static struct irq_chip mpic_irq_ht_chip = {
 static int mpic_host_match(struct irq_host *h, struct device_node *node)
 {
 	/* Exact match, unless mpic node is NULL */
-	return h->of_node == NULL || h->of_node == node;
+	return h->domain.controller == NULL || h->domain.controller == node;
 }
 
 static int mpic_host_map(struct irq_host *h, unsigned int virq,
@@ -1297,7 +1296,7 @@ void __init mpic_assign_isu(struct mpic *mpic, unsigned int isu_num,
 
 	BUG_ON(isu_num >= MPIC_MAX_ISU);
 
-	mpic_map(mpic, mpic->irqhost->of_node,
+	mpic_map(mpic, mpic->irqhost->domain.controller,
 		 paddr, &mpic->isus[isu_num], 0,
 		 MPIC_INFO(IRQ_STRIDE) * mpic->isu_size);
 
@@ -1427,7 +1426,7 @@ void __init mpic_set_serial_int(struct mpic *mpic, int enable)
 void mpic_irq_set_priority(unsigned int irq, unsigned int pri)
 {
 	struct mpic *mpic = mpic_find(irq);
-	unsigned int src = mpic_irq_to_hw(irq);
+	unsigned int src = virq_to_hw(irq);
 	unsigned long flags;
 	u32 reg;
 

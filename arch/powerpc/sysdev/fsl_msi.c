@@ -19,6 +19,7 @@
 #include <linux/slab.h>
 #include <linux/of_platform.h>
 #include <sysdev/fsl_soc.h>
+#include <asm/irqhost.h>
 #include <asm/prom.h>
 #include <asm/hw_irq.h>
 #include <asm/ppc-pci.h>
@@ -81,7 +82,7 @@ static int fsl_msi_init_allocator(struct fsl_msi *msi_data)
 	int rc;
 
 	rc = msi_bitmap_alloc(&msi_data->bitmap, NR_MSI_IRQS,
-			      msi_data->irqhost->of_node);
+			      msi_data->irqhost->domain.controller);
 	if (rc)
 		return rc;
 

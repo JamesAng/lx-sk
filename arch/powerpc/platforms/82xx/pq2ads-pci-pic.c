@@ -19,6 +19,7 @@
 #include <linux/bootmem.h>
 #include <linux/slab.h>
 
+#include <asm/irqhost.h>
 #include <asm/io.h>
 #include <asm/prom.h>
 #include <asm/cpm2.h>
@@ -42,7 +43,7 @@ struct pq2ads_pci_pic {
 static void pq2ads_pci_mask_irq(struct irq_data *d)
 {
 	struct pq2ads_pci_pic *priv = irq_data_get_irq_chip_data(d);
-	int irq = NUM_IRQS - virq_to_hw(d->irq) - 1;
+	int irq = NUM_IRQS - irqd_to_hwirq(d) - 1;
 
 	if (irq != -1) {
 		unsigned long flags;
@@ -58,7 +59,7 @@ static void pq2ads_pci_mask_irq(struct irq_data *d)
 static void pq2ads_pci_unmask_irq(struct irq_data *d)
 {
 	struct pq2ads_pci_pic *priv = irq_data_get_irq_chip_data(d);
-	int irq = NUM_IRQS - virq_to_hw(d->irq) - 1;
+	int irq = NUM_IRQS - irqd_to_hwirq(d) - 1;
 
 	if (irq != -1) {
 		unsigned long flags;
