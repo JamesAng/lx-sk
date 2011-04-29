@@ -218,7 +218,6 @@ extern struct meminfo meminfo;
 #define bank_phys_size(bank)	(bank)->size
 
 extern int arm_add_memory(phys_addr_t start, unsigned long size);
-extern char cmd_line[COMMAND_LINE_SIZE];
 extern void early_print(const char *str, ...);
 extern void dump_machine_table(void);
 

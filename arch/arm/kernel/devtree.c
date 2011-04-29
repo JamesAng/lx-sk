@@ -118,13 +118,11 @@ struct machine_desc * __init setup_machine_fdt(unsigned int dt_phys)
 	pr_info("Machine: %s, model: %s\n", mdesc_best->name, model);
 
 	/* Retrieve various information from the /chosen node */
-	of_scan_flat_dt(early_init_dt_scan_chosen, NULL);
+	of_scan_flat_dt(early_init_dt_scan_chosen, boot_command_line);
 	/* Initialize {size,address}-cells info */
 	of_scan_flat_dt(early_init_dt_scan_root, NULL);
 	/* Setup memory, calling early_init_dt_add_memory_arch */
 	of_scan_flat_dt(early_init_dt_scan_memory, NULL);
-	/* Save command line for /proc/cmdline  */
-	strlcpy(boot_command_line, cmd_line, COMMAND_LINE_SIZE);
 
 	/* Change machine number to match the mdesc we're using */
 	__machine_arch_type = mdesc_best->nr;
