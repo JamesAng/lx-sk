@@ -184,7 +184,7 @@ it with special cases.
                 boundary.
 
    The kernel will differentiate between ATAGS and device tree booting by
-   reading the memory pointed to by r1 and looking for either the flattened
+   reading the memory pointed to by r2 and looking for either the flattened
    device tree block magic value (0xd00dfeed) or the ATAG_CORE value at
    offset 0x4 from r2 (0x54410001).
 
