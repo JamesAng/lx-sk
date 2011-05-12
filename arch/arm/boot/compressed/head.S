@@ -266,6 +266,25 @@ restart:	adr	r0, LC0
 		add	lr, lr, #7
 		bic	lr, lr, #7
 
+		/*
+		 * Compensate for the appended device tree and make stack
+		 * usable. Note if the linker script changes so the stack is
+		 * not after the bss section, this code will be wrong.
+		 */
+		add	sp, sp, lr
+
+		/*
+		 * Calculate and save the offset between kernel BSS end and
+		 * device tree data start for later use to check they won't
+		 * overlap.
+		 */
+		adr	r1, kbss_sz
+		ldr	r1, [r1, #0]		@ kernel BSS size
+		add	r1, r1, r4		@ add inflated kernel start
+		add	r1, r1, r9		@ add inflated kernel size
+		sub	r1, r1, r6		@ kbss end - dt start
+		str	r1, [sp, #-4]!		@ save offset into stack
+
 		add	r10, r10, lr
 		add	r6, r6, lr
 dtb_check_done:
@@ -273,17 +292,29 @@ dtb_check_done:
 
 /*
  * Check to see if we will overwrite ourselves.
+ *   r1  = corrupted
  *   r4  = final kernel address
  *   r9  = size of decompressed image
  *   r10 = end of this image, including  bss/stack/malloc space if non XIP
  * We basically want:
  *   r4 - 16k page directory >= r10 -> OK
  *   r4 + image length <= current position (pc) -> OK
+ * For the appended device tree case, check that the device tree data does
+ * not overlap the kernel BSS area.
  */
 		add	r10, r10, #16384
 		cmp	r4, r10
 		bhs	wont_overwrite
 		add	r10, r4, r9
+#if defined(CONFIG_ARM_APPENDED_DTB)
+		cmp	lr, #0			@ device tree appended?
+		beq	no_kbss_check		@ no, skip check
+		ldr	r1, [sp], #4		@ get kbss offset from stack
+		add	r1, r10, r1		@ inflated end + kbss offset
+		cmp	r10, r1			@ DT start < kernel BSS end?
+		movlt	r10, r1			@ yes, move past kernel BSS end
+no_kbss_check:
+#endif
    ARM(		cmp	r10, pc		)
  THUMB(		mov	lr, pc		)
  THUMB(		cmp	r10, lr		)
@@ -333,6 +364,10 @@ dtb_check_done:
 		add	r0, r0, r6
 		mov	pc, r0
 
+#ifdef CONFIG_ARM_APPENDED_DTB
+kbss_sz:	.word	_kbss_sz		@ kernel BSS size
+#endif
+
 wont_overwrite:
 /*
  * If delta is zero, we are running at the address we were linked at.
@@ -378,13 +413,6 @@ wont_overwrite:
 		add	r2, r2, lr
 		add	r3, r3, lr
 
-		/*
-		 * bump the stack pinter
-		 *
- 		 * If the linker script changes so the stack is not after
-		 * the bss section, this code will be wrong.
-		 */
-		add	sp, sp, lr
 #else
 
 		/*
