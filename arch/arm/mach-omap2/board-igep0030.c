@@ -452,7 +452,7 @@ MACHINE_START(IGEP0030, "IGEP OMAP3 module")
 	.reserve	= omap_reserve,
 	.map_io		= omap3_map_io,
 	.init_early	= igep3_init_early,
-	.init_irq	= omap_init_irq,
+	.init_irq	= omap3_init_irq,
 	.init_machine	= igep3_init,
 	.timer		= &omap_timer,
 MACHINE_END
