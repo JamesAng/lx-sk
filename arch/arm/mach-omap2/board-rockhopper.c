@@ -299,7 +299,7 @@ static struct twl4030_platform_data rockhopper_twldata = {
 	.vpll2		= &rockhopper_vpll2,
 };
 
-static struct i2c_board_info __initdata rockhopper_i2c_boardinfo[] = {
+static struct i2c_board_info __initdata rockhopper_i2c1_boardinfo[] = {
 	{
 		I2C_BOARD_INFO("twl4030", 0x48),
 		.flags = I2C_CLIENT_WAKE,
@@ -308,11 +308,18 @@ static struct i2c_board_info __initdata rockhopper_i2c_boardinfo[] = {
 	},
 };
 
+static struct i2c_board_info __initdata rockhopper_i2c2_boardinfo[] = {
+	{
+		I2C_BOARD_INFO("ds1340", 0x68),
+	},
+};
+
 static int __init rockhopper_i2c_init(void)
 {
-	omap_register_i2c_bus(1, 2600, rockhopper_i2c_boardinfo,
-			ARRAY_SIZE(rockhopper_i2c_boardinfo));
-	omap_register_i2c_bus(2, 400, NULL, 0);
+	omap_register_i2c_bus(1, 2600, rockhopper_i2c1_boardinfo,
+			ARRAY_SIZE(rockhopper_i2c1_boardinfo));
+	omap_register_i2c_bus(2, 400, rockhopper_i2c2_boardinfo,
+			ARRAY_SIZE(rockhopper_i2c2_boardinfo));
 	/* Bus 3 is attached to the DVI port where devices like the pico DLP
 	 * projector don't work reliably with 400kHz */
 	omap_register_i2c_bus(3, 100, NULL, 0);
@@ -363,6 +370,30 @@ static struct gpio_keys_button gpio_buttons[] = {
 		.code			= BTN_EXTRA,
 		.gpio			= 7,
 		.desc			= "user",
+		.wakeup			= 1,
+	},
+	{
+		.code			= BTN_0,
+		.gpio			= 140,
+		.desc			= "button0",
+		.wakeup			= 1,
+	},
+	{
+		.code			= BTN_1,
+		.gpio			= 141,
+		.desc			= "button1",
+		.wakeup			= 1,
+	},
+	{
+		.code			= BTN_2,
+		.gpio			= 142,
+		.desc			= "button0",
+		.wakeup			= 1,
+	},
+	{
+		.code			= BTN_3,
+		.gpio			= 143,
+		.desc			= "button1",
 		.wakeup			= 1,
 	},
 };
@@ -432,13 +463,13 @@ static void __init rockhopper_flash_init(void)
 
 static const struct ehci_hcd_omap_platform_data ehci_pdata __initconst = {
 
-	.port_mode[0] = EHCI_HCD_OMAP_MODE_PHY,
+	.port_mode[0] = EHCI_HCD_OMAP_MODE_UNKNOWN,
 	.port_mode[1] = EHCI_HCD_OMAP_MODE_PHY,
 	.port_mode[2] = EHCI_HCD_OMAP_MODE_UNKNOWN,
 
 	.phy_reset  = true,
-	.reset_gpio_port[0]  = 27,
-	.reset_gpio_port[1]  = -EINVAL,
+	.reset_gpio_port[0]  = -EINVAL,
+	.reset_gpio_port[1]  = 27,
 	.reset_gpio_port[2]  = -EINVAL
 };
 
